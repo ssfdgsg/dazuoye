@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MovieCard, { MovieCardSkeleton } from '../components/MovieCard';
 import { getUserCFRecommendations } from '../services/api';
@@ -8,16 +8,21 @@ import './UserCF.css';
 function UserCF() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(user?.id?.toString() || '');
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!userId.trim()) {
-      setError('请输入用户 ID');
+  // 登录后自动加载推荐
+  useEffect(() => {
+    if (user?.id) {
+      loadRecommendations();
+    }
+  }, [user]);
+
+  const loadRecommendations = async () => {
+    if (!user?.id) {
+      setError('请先登录');
       return;
     }
 
@@ -27,12 +32,11 @@ function UserCF() {
     setStats(null);
 
     try {
-      const data = await getUserCFRecommendations(parseInt(userId), 12);
+      const data = await getUserCFRecommendations(user.id, 12);
       
       if (data.error) {
         setError(data.error);
       } else if (data.recommendations && data.recommendations.length > 0) {
-        // 转换数据格式以适配 MovieCard
         const movies = data.recommendations.map(r => ({
           id: r.movie_id,
           title: r.title,
@@ -49,7 +53,7 @@ function UserCF() {
           message: data.message,
         });
       } else {
-        setError(data.message || '该用户暂无推荐结果，可能评分数据不足');
+        setError(data.message || '暂无推荐结果，多评几部电影试试');
       }
     } catch (err) {
       setError(err.message || '获取推荐失败');
@@ -58,6 +62,25 @@ function UserCF() {
     }
   };
 
+  // 未登录状态
+  if (!user) {
+    return (
+      <div className="usercf-page container fade-in">
+        <div className="usercf-header">
+          <h1>👥 其他人在看</h1>
+          <p>看看和你品味相似的用户都在看什么电影</p>
+        </div>
+        <div className="usercf-empty">
+          <div className="empty-icon">🔐</div>
+          <p>登录后查看个性化推荐</p>
+          <button className="login-btn-large" onClick={() => navigate('/login')}>
+            立即登录
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="usercf-page container fade-in">
       <div className="usercf-header">
@@ -65,32 +88,10 @@ function UserCF() {
         <p>看看和你品味相似的用户都在看什么电影</p>
       </div>
 
-      <form className="usercf-form" onSubmit={handleSubmit}>
-        <div className="form-row">
-          <input
-            type="number"
-            placeholder="输入用户 ID（如：1, 2, 503...）"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            min="1"
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? '查找中...' : '🔍 查看推荐'}
-          </button>
-        </div>
-        {user && (
-          <p className="form-hint">
-            当前登录用户 ID: <strong>{user.id}</strong>
-            <button type="button" className="use-my-id" onClick={() => setUserId(user.id.toString())}>
-              使用我的 ID
-            </button>
-          </p>
-        )}
-      </form>
-
       {error && (
         <div className="usercf-error">
           <span>⚠️</span> {error}
+          <button className="retry-btn" onClick={loadRecommendations}>重试</button>
         </div>
       )}
 
@@ -120,7 +121,10 @@ function UserCF() {
         </div>
       ) : recommendations.length > 0 ? (
         <>
-          <h2 className="results-title">🎬 他们也喜欢这些电影</h2>
+          <div className="results-header">
+            <h2 className="results-title">🎬 他们也喜欢这些电影</h2>
+            <button className="refresh-btn" onClick={loadRecommendations}>🔄 换一批</button>
+          </div>
           <div className="movie-grid">
             {recommendations.map((movie) => (
               <div key={movie.id} className="movie-card-wrapper">
@@ -134,14 +138,12 @@ function UserCF() {
             ))}
           </div>
         </>
-      ) : null}
-
-      {!loading && !error && recommendations.length === 0 && (
+      ) : !error && !loading ? (
         <div className="usercf-empty">
           <div className="empty-icon">🎬</div>
-          <p>输入用户 ID，发现更多好电影</p>
+          <p>正在加载推荐...</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
