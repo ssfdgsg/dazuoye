@@ -138,6 +138,111 @@
   margin-bottom: 40px;
 }
 
+/* AI Review Section */
+.ai-review-section {
+  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 40px;
+  border: 1px solid #e0e7ff;
+}
+
+.ai-review-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+.ai-review-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+}
+
+.ai-review-content p {
+  color: var(--text-dark);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.ai-refresh-btn {
+  padding: 8px 16px;
+  background: var(--bg-cream);
+  color: var(--text-gray);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-refresh-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--text-dark);
+}
+
+.ai-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-review-placeholder {
+  text-align: center;
+  padding: 20px;
+}
+
+.ai-review-placeholder p {
+  color: var(--text-gray);
+  margin-bottom: 16px;
+}
+
+.ai-generate-btn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-xl);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.ai-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.ai-review-error {
+  text-align: center;
+  padding: 20px;
+}
+
+.ai-review-error p {
+  color: var(--error);
+  margin-bottom: 16px;
+}
+
 .rate-title {
   font-size: 1.3rem;
   font-weight: 600;

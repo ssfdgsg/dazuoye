@@ -6,9 +6,18 @@ import './Layout.css';
 
 function Layout() {
   const { user, logout } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -28,6 +37,17 @@ function Layout() {
             <Link to="/" className="nav-link" onClick={() => setMenuOpen(false)}>首页</Link>
             <Link to="/rankings" className="nav-link" onClick={() => setMenuOpen(false)}>排行榜</Link>
           </nav>
+
+          <form className="search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="搜索电影..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            <button type="submit" className="search-btn">🔍</button>
+          </form>
 
           <div className="header-actions">
             {user ? (

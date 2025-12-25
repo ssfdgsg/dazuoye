@@ -88,11 +88,6 @@ function Home() {
 
   return (
     <div className="home container">
-      <section className="hero">
-        <h1 className="hero-title">发现你的下一部最爱</h1>
-        <p className="hero-subtitle">基于智能推荐算法，为你精选好电影</p>
-      </section>
-
       <section className="section">
         <div className="section-header">
           <h2 className="section-title">

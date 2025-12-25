@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MovieCard, { MovieCardSkeleton } from '../components/MovieCard';
 import StarRating from '../components/StarRating';
-import { getMovie, getSimilarMovies, rateMovie } from '../services/api';
+import { getMovie, getSimilarMovies, rateMovie, getAIReview } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './MovieDetail.css';
 
@@ -17,11 +17,30 @@ function MovieDetail() {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [rateSuccess, setRateSuccess] = useState(false);
+  const [aiReview, setAiReview] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   useEffect(() => {
     loadMovie();
     loadSimilarMovies();
+    setAiReview('');
+    setAiError('');
   }, [id]);
+
+  const loadAIReview = async () => {
+    if (!movie || aiLoading) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const review = await getAIReview(movie);
+      setAiReview(review);
+    } catch (err) {
+      setAiError('AI 评价生成失败，请稍后重试');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const loadMovie = async () => {
     setLoading(true);
@@ -147,6 +166,39 @@ function MovieDetail() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="ai-review-section">
+        <h2 className="ai-review-title">🤖 AI 智能评价</h2>
+        {aiReview ? (
+          <div className="ai-review-content">
+            <p>{aiReview}</p>
+            <button className="ai-refresh-btn" onClick={loadAIReview} disabled={aiLoading}>
+              {aiLoading ? '生成中...' : '🔄 重新生成'}
+            </button>
+          </div>
+        ) : aiError ? (
+          <div className="ai-review-error">
+            <p>{aiError}</p>
+            <button className="ai-generate-btn" onClick={loadAIReview} disabled={aiLoading}>
+              重试
+            </button>
+          </div>
+        ) : (
+          <div className="ai-review-placeholder">
+            <p>点击下方按钮，让 AI 为你分析这部电影</p>
+            <button className="ai-generate-btn" onClick={loadAIReview} disabled={aiLoading}>
+              {aiLoading ? (
+                <>
+                  <span className="ai-loading-spinner"></span>
+                  AI 正在分析...
+                </>
+              ) : (
+                '✨ 生成 AI 评价'
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="rate-section">

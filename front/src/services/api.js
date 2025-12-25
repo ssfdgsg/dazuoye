@@ -62,3 +62,38 @@ export const getALSStatus = () => request('/als/status');
 export const getALSTask = (userId) => request(`/als/task/${userId}`);
 
 export const getALSLogs = (userId) => request(`/als/logs/${userId}`);
+
+
+// AI 评价
+const AI_API_URL = 'http://157.230.37.18/proxy/gemini_openai';
+const AI_API_KEY = 'sk-o2md1WVDQNYRXh4g4H62xHt2DlNc4XBUAWx8KiANSDx3YBer';
+
+export const getAIReview = async (movie) => {
+  const prompt = `请用中文为电影《${movie.title}》写一段简短的AI评价（100字左右）。
+电影信息：
+- 类型：${movie.genres?.join('、') || '未知'}
+- 评分：${movie.rating || '未知'}
+- 简介：${movie.overview || '暂无'}
+请从剧情、演技、视觉效果等方面给出客观评价，语言简洁有力。`;
+
+  const response = await fetch(`${AI_API_URL}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${AI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gemini-2.5-pro',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('AI 评价生成失败');
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '暂无AI评价';
+};
