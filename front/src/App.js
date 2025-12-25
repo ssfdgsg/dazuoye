@@ -11,6 +11,7 @@ import Browse from './pages/Browse';
 import UserRatings from './pages/UserRatings';
 import Search from './pages/Search';
 import Compare from './pages/Compare';
+import UserCF from './pages/UserCF';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="browse" element={<Browse />} />
           <Route path="search" element={<Search />} />
           <Route path="compare" element={<Compare />} />
+          <Route path="usercf" element={<UserCF />} />
           <Route path="user/ratings" element={<UserRatings />} />
         </Route>
         <Route path="/login" element={<Login />} />

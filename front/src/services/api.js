@@ -52,6 +52,9 @@ export const getMoviesByGenre = (genre = 'all', limit = 12) =>
 export const getRecommendations = (topN = 12, force = false) =>
   request(`/movies/recommendations?topN=${topN}${force ? '&force=1' : ''}`);
 
+export const getUserCFRecommendations = (userId, topN = 10) =>
+  request(`/user/${userId}/recommend-cf?topN=${topN}`);
+
 export const getSimilarMovies = (movieId, limit = 12) =>
   request(`/similar-movies/${movieId}?limit=${limit}`);
 

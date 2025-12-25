@@ -49,6 +49,31 @@ async def user_recommend(user_id: int, topN: int = Query(10, ge=1, le=50)):
     return get_user_recommendations(user_id, topN)
 
 
+@router.get("/user/{user_id}/recommend-cf")
+async def user_recommend_cf(user_id: int, topN: int = Query(10, ge=1, le=50)):
+    """获取 User-CF 协同过滤推荐"""
+    import subprocess
+    import json
+    import os
+    
+    script_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "code", "python", "movie_recommender.py")
+    )
+    cmd = ["python3", script_path, "--user_cf", str(user_id), "--topN", str(topN)]
+    
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if proc.returncode == 0 and proc.stdout:
+            data = json.loads(proc.stdout.strip())
+            return data
+        else:
+            raise HTTPException(status_code=500, detail="User-CF 推荐计算失败")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="推荐计算超时")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="推荐结果解析失败")
+
+
 @router.get("/movies/recommendations")
 async def recommendations(
     topN: int = Query(10, ge=1, le=50),

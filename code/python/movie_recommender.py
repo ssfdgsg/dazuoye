@@ -107,7 +107,21 @@ def recommend_by_user_cf(db_conn, user_id, topN, sim_user_count=20):
     for other_uid, other_ratings in user_ratings_map.items():
         # 找共同评分的电影
         common_movies = set(target_ratings.keys()) & set(other_ratings.keys())
-        if len(common_movies) < 3:  # 至少3部共同电影才计算
+        if len(common_movies) < 1:  # 至少1部共同电影才计算
+            continue
+        
+        # 如果只有1-2部共同电影，使用余弦相似度
+        if len(common_movies) < 3:
+            # 简单余弦相似度
+            dot_product = sum(target_ratings[mid] * other_ratings[mid] for mid in common_movies)
+            norm_target = np.sqrt(sum(target_ratings[mid]**2 for mid in common_movies))
+            norm_other = np.sqrt(sum(other_ratings[mid]**2 for mid in common_movies))
+            if norm_target > 0 and norm_other > 0:
+                sim = dot_product / (norm_target * norm_other)
+                # 降低权重因为共同电影少
+                sim *= (len(common_movies) / 3.0)
+                if sim > 0.1:
+                    similarities.append((other_uid, sim, other_ratings))
             continue
         
         # 皮尔逊相关系数
@@ -131,6 +145,56 @@ def recommend_by_user_cf(db_conn, user_id, topN, sim_user_count=20):
                 similarities.append((other_uid, sim, other_ratings))
     
     if not similarities:
+        # 回退策略：基于用户评分过的电影类型推荐热门电影
+        cursor.execute("""
+            SELECT m.genres FROM movie_basic m
+            JOIN user_ratings ur ON m.movie_id = ur.movie_id
+            WHERE ur.user_id = %s AND m.genres IS NOT NULL
+        """, (user_id,))
+        user_genres = cursor.fetchall()
+        
+        if user_genres:
+            # 提取用户喜欢的类型
+            genre_counts = {}
+            for row in user_genres:
+                if row['genres']:
+                    for g in row['genres'].split(','):
+                        g = g.strip()
+                        genre_counts[g] = genre_counts.get(g, 0) + 1
+            
+            if genre_counts:
+                # 取最喜欢的类型
+                top_genre = max(genre_counts, key=genre_counts.get)
+                
+                # 推荐该类型的热门电影
+                cursor.execute("""
+                    SELECT movie_id, title, genres, release_date, vote_average
+                    FROM movie_basic
+                    WHERE genres ILIKE %s
+                    AND movie_id NOT IN (SELECT movie_id FROM user_ratings WHERE user_id = %s)
+                    ORDER BY vote_average DESC, vote_count DESC
+                    LIMIT %s
+                """, (f"%{top_genre}%", user_id, topN))
+                
+                fallback_movies = cursor.fetchall()
+                results = []
+                for m in fallback_movies:
+                    results.append({
+                        "movie_id": m['movie_id'],
+                        "title": m["title"],
+                        "genre": m["genres"],
+                        "release_date": str(m["release_date"]) if m["release_date"] else "未知",
+                        "vote_average": float(m["vote_average"]) if m["vote_average"] else 0.0,
+                        "predict_rating": float(m["vote_average"]) if m["vote_average"] else 0.0
+                    })
+                
+                return {
+                    "user_id": user_id, 
+                    "recommendations": results, 
+                    "method": "genre_fallback",
+                    "message": f"基于您喜欢的类型 '{top_genre}' 推荐"
+                }
+        
         return {"user_id": user_id, "recommendations": [], "method": "user_cf", "message": "没有找到相似用户"}
     
     # 4. 取最相似的 K 个用户

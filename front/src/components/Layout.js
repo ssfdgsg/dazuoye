@@ -39,6 +39,7 @@ function Layout() {
               <Link to="/browse" className="nav-link" onClick={() => setMenuOpen(false)}>分类</Link>
               <Link to="/rankings" className="nav-link" onClick={() => setMenuOpen(false)}>排行榜</Link>
               <Link to="/compare" className="nav-link" onClick={() => setMenuOpen(false)}>对比</Link>
+              <Link to="/usercf" className="nav-link" onClick={() => setMenuOpen(false)}>他们在看</Link>
             </nav>
           </div>
 
