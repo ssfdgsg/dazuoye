@@ -6,13 +6,14 @@ import subprocess
 import numpy as np
 from typing import Optional
 from database import get_connection
+from psycopg2.extras import RealDictCursor
 from utils.tfidf import decode_tfidf, cosine_similarity
 
 
 def get_similar_movies(movie_id: int, limit: int = 12) -> Optional[list]:
     """获取相似电影（基于 TF-IDF）"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     # 获取目标电影
     cursor.execute("""
@@ -70,7 +71,7 @@ def get_similar_movies(movie_id: int, limit: int = 12) -> Optional[list]:
 def get_user_recommendations(user_id: int, topN: int = 10) -> dict:
     """获取用户推荐（优先 ALS，回退热门）"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     # 尝试预计算推荐
     cursor.execute("""
@@ -107,7 +108,7 @@ def get_user_recommendations(user_id: int, topN: int = 10) -> dict:
     
     cursor.execute("""
         SELECT movie_id, title, genres, release_date, vote_average, popularity_score
-        FROM movie_basic ORDER BY popularity_score DESC, vote_average DESC LIMIT 80
+        FROM movie_basic ORDER BY popularity_score DESC NULLS LAST, vote_average DESC NULLS LAST LIMIT 80
     """)
     
     candidates = [r for r in cursor.fetchall() if r["movie_id"] not in seen]
@@ -133,7 +134,7 @@ def get_user_recommendations(user_id: int, topN: int = 10) -> dict:
 def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, force_refresh: bool = False) -> dict:
     """获取个性化推荐"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     # 强制刷新：调用 ALS 脚本
     if user_id and force_refresh:
@@ -205,13 +206,13 @@ def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, for
             FROM movie_basic m
             WHERE m.movie_id NOT IN (SELECT movie_id FROM user_ratings WHERE user_id = %s)
             AND m.vote_average IS NOT NULL
-            ORDER BY m.popularity_score DESC, m.vote_average DESC LIMIT %s
+            ORDER BY m.popularity_score DESC NULLS LAST, m.vote_average DESC NULLS LAST LIMIT %s
         """, (user_id, topN * 2))
     else:
         cursor.execute("""
             SELECT movie_id, title, genres, vote_average, popularity_score
             FROM movie_basic WHERE vote_average IS NOT NULL
-            ORDER BY popularity_score DESC, vote_average DESC LIMIT %s
+            ORDER BY popularity_score DESC NULLS LAST, vote_average DESC NULLS LAST LIMIT %s
         """, (topN * 2,))
     
     movies = cursor.fetchall()

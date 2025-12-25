@@ -4,7 +4,8 @@ import numpy as np
 from pyspark.sql import SparkSession
 from pyspark.ml.recommendation import ALSModel
 from pyspark.ml.linalg import Vectors
-import mysql.connector
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import base64
 import json
 import os
@@ -17,16 +18,17 @@ def init_spark():
         .appName("MovieRecommenderService") \
         .master("local[*]") \
         .config("spark.driver.memory", "2g") \
-        .config("spark.jars", "/home/a1386/Desktop/BigData/movieRecommendSystemV1/lib/mysql-connector-j-8.0.33.jar") \
+        .config("spark.jars", "/home/a1386/Desktop/BigData/movieRecommendSystemV1/lib/postgresql-42.7.1.jar") \
         .getOrCreate()
 
-# 初始化MySQL连接
-def init_mysql():
-    return mysql.connector.connect(
+# 初始化PostgreSQL连接
+def init_db():
+    return psycopg2.connect(
         host="localhost",
-        user="root",
-        password="root123",
-        database="movie_db"
+        port=5432,
+        user="postgres",
+        password="postgres",
+        dbname="movie_db"
     )
 
 # 解码Base64特征向量
@@ -41,11 +43,16 @@ def decode_vector(encoded_str):
     except:
         return Vectors.zeros(100)  # 解码失败返回默认向量
 
-# 检查表是否存在
-def check_table_exists(mysql_conn, table_name):
-    cursor = mysql_conn.cursor()
-    cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
-    return cursor.fetchone() is not None
+# 检查表是否存在 (PostgreSQL)
+def check_table_exists(db_conn, table_name):
+    cursor = db_conn.cursor()
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = %s
+        )
+    """, (table_name,))
+    return cursor.fetchone()[0]
 
 # 检查ALS模型是否存在
 def check_als_model_exists(model_path):
@@ -57,19 +64,19 @@ def check_als_model_exists(model_path):
     except:
         return False
 
-def recommend_by_genre(mysql_conn, genre, topN):
+def recommend_by_genre(db_conn, genre, topN):
     """
     推荐指定类别的前N个电影，按评分（vote_average）降序。
     """
-    cursor = mysql_conn.cursor(dictionary=True)
+    cursor = db_conn.cursor(cursor_factory=RealDictCursor)
     # 检查表是否存在
-    if not check_table_exists(mysql_conn, "movie_basic"):
+    if not check_table_exists(db_conn, "movie_basic"):
         return {"error": "movie_basic 表不存在，请先运行数据预处理"}
-    # 支持模糊匹配类别（如 Comedy、Action）
+    # 支持模糊匹配类别（如 Comedy、Action）- PostgreSQL 使用 ILIKE
     query = """
         SELECT movie_id, title, genres, release_date, vote_average 
         FROM movie_basic 
-        WHERE genres LIKE %s 
+        WHERE genres ILIKE %s 
         ORDER BY vote_average DESC, vote_count DESC 
         LIMIT %s
     """
@@ -85,11 +92,11 @@ def recommend_by_genre(mysql_conn, genre, topN):
     return {"genre": genre, "recommendations": movies}
 
 # 基于电影ID推荐相似电影
-def recommend_by_movie(spark, mysql_conn, movie_id, topN):
-    cursor = mysql_conn.cursor(dictionary=True)
+def recommend_by_movie(spark, db_conn, movie_id, topN):
+    cursor = db_conn.cursor(cursor_factory=RealDictCursor)
     
     # 检查表是否存在
-    if not check_table_exists(mysql_conn, "movie_features"):
+    if not check_table_exists(db_conn, "movie_features"):
         return {"error": "movie_features 表不存在，请先运行数据预处理"}
     
     # 获取目标电影特征 - 从 movie_basic 获取标题和类型
@@ -183,7 +190,7 @@ def recommend_by_movie(spark, mysql_conn, movie_id, topN):
     }
 
 # 冷启动用户推荐：利用用户评分和电影隐向量求解用户隐向量
-def recommend_for_cold_start_user(spark, mysql_conn, als_model, user_id, topN):
+def recommend_for_cold_start_user(spark, db_conn, als_model, user_id, topN):
     """
     对于不在训练集中的新用户，使用其评分数据和已有的电影隐向量，
     通过最小二乘法求解用户隐向量，然后进行推荐。
@@ -197,7 +204,7 @@ def recommend_for_cold_start_user(spark, mysql_conn, als_model, user_id, topN):
     """
     try:
         # 1. 获取用户的评分数据
-        cursor = mysql_conn.cursor(dictionary=True)
+        cursor = db_conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute("""
             SELECT movie_id, rating 
             FROM user_ratings 
@@ -264,7 +271,7 @@ def recommend_for_cold_start_user(spark, mysql_conn, als_model, user_id, topN):
         top_predictions = predictions[:topN]
         print("[PROGRESS] predictions_scored", file=sys.stderr, flush=True)
         
-        # 7. 从MySQL获取电影详情
+        # 7. 从PostgreSQL获取电影详情
         if not top_predictions:
             return {"user_id": user_id, "recommendations": []}
         
@@ -306,7 +313,7 @@ def recommend_for_cold_start_user(spark, mysql_conn, als_model, user_id, topN):
 
 
 # 基于用户ID推荐个性化电影
-def recommend_by_user(spark, mysql_conn, user_id, topN):
+def recommend_by_user(spark, db_conn, user_id, topN):
     # 检查ALS模型是否存在
     model_path = "hdfs://node1:9000/user/a1386/movie_model/als_tmdb"
     
@@ -327,7 +334,7 @@ def recommend_by_user(spark, mysql_conn, user_id, topN):
         
         if count == 0:
             # 用户不在训练集中，启用冷启动推荐
-            return recommend_for_cold_start_user(spark, mysql_conn, als_model, user_id, topN)
+            return recommend_for_cold_start_user(spark, db_conn, als_model, user_id, topN)
         
         # 解析推荐结果
         collected = rec_df.collect()
@@ -342,8 +349,8 @@ def recommend_by_user(spark, mysql_conn, user_id, topN):
         movie_ids = [str(rec["movie_id"]) for rec in rec_list]
         predict_ratings = [round(rec["rating"], 2) for rec in rec_list]
         
-        # 从MySQL获取电影详情
-        cursor = mysql_conn.cursor(dictionary=True)
+        # 从PostgreSQL获取电影详情
+        cursor = db_conn.cursor(cursor_factory=RealDictCursor)
         if movie_ids:
             placeholders = ','.join(['%s'] * len(movie_ids))
             query = f"""
@@ -392,20 +399,20 @@ def main():
     args = parser.parse_args()
 
     spark = None
-    mysql_conn = None
+    db_conn = None
 
     try:
         # 只有基于用户/电影推荐才需要 Spark
         if args.movie_id or args.user_id:
             spark = init_spark()
-        mysql_conn = init_mysql()
+        db_conn = init_db()
 
         if args.movie_id:
-            result = recommend_by_movie(spark, mysql_conn, args.movie_id, args.topN)
+            result = recommend_by_movie(spark, db_conn, args.movie_id, args.topN)
         elif args.user_id:
-            result = recommend_by_user(spark, mysql_conn, args.user_id, args.topN)
+            result = recommend_by_user(spark, db_conn, args.user_id, args.topN)
         elif args.genre:
-            result = recommend_by_genre(mysql_conn, args.genre, args.topN)
+            result = recommend_by_genre(db_conn, args.genre, args.topN)
         else:
             result = {"error": "未指定推荐类型"}
 
@@ -416,8 +423,8 @@ def main():
     finally:
         if spark:
             spark.stop()
-        if mysql_conn:
-            mysql_conn.close()
+        if db_conn:
+            db_conn.close()
 
 if __name__ == "__main__":
     main()

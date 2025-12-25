@@ -177,11 +177,12 @@ def _recompute_user_recommendations(user_id: int, topN: int = 80):
 
         if not rows:
             # 回退到热门电影
-            c2 = conn.cursor(buffered=True, dictionary=True)
+            from psycopg2.extras import RealDictCursor
+            c2 = conn.cursor(cursor_factory=RealDictCursor)
             c2.execute("SELECT movie_id FROM user_ratings WHERE user_id = %s", (user_id,))
             seen = {row["movie_id"] for row in c2.fetchall()}
             c2.execute(
-                "SELECT movie_id, vote_average FROM movie_basic ORDER BY popularity_score DESC LIMIT %s",
+                "SELECT movie_id, vote_average FROM movie_basic ORDER BY popularity_score DESC NULLS LAST LIMIT %s",
                 (topN * 2,),
             )
             for r in c2.fetchall():

@@ -7,7 +7,7 @@
 ## 技术栈
 
 - **框架**: FastAPI
-- **数据库**: MySQL (mysql-connector-python)
+- **数据库**: PostgreSQL (psycopg2-binary)
 - **认证**: JWT Token (python-jose)
 - **密码加密**: passlib[bcrypt]
 - **异步任务**: 后台线程 + Queue

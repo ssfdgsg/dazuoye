@@ -5,10 +5,11 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # 数据库配置
+    # 数据库配置 (PostgreSQL)
     db_host: str = "localhost"
-    db_user: str = "root"
-    db_pass: str = "root123"
+    db_port: int = 5432
+    db_user: str = "postgres"
+    db_pass: str = "postgres"
     db_name: str = "movie_db"
     
     # JWT 配置

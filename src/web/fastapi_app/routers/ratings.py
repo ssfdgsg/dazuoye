@@ -1,5 +1,6 @@
 """评分路由"""
 from fastapi import APIRouter, HTTPException, Depends
+from psycopg2.extras import RealDictCursor
 from models.schemas import RatingCreate, ALSStatus, ALSTaskStatus, ALSLogsResponse
 from dependencies import get_current_user
 from database import get_connection, ensure_tables
@@ -19,8 +20,9 @@ async def rate_movie(movie_id: int, rating: RatingCreate, user: dict = Depends(g
     user_id = user["user_id"]
     
     conn = get_connection()
-    cursor = conn.cursor(buffered=True)
+    cursor = conn.cursor()
     ensure_tables(cursor)
+    conn.commit()
     
     # 检查是否已评分
     cursor.execute(
@@ -31,12 +33,12 @@ async def rate_movie(movie_id: int, rating: RatingCreate, user: dict = Depends(g
     
     if existing:
         cursor.execute(
-            "UPDATE user_ratings SET rating = %s, rating_time = NOW() WHERE user_id = %s AND movie_id = %s",
+            "UPDATE user_ratings SET rating = %s, rating_time = CURRENT_TIMESTAMP WHERE user_id = %s AND movie_id = %s",
             (rating.rating, user_id, movie_id),
         )
     else:
         cursor.execute(
-            "INSERT INTO user_ratings (user_id, movie_id, rating, rating_time) VALUES (%s, %s, %s, NOW())",
+            "INSERT INTO user_ratings (user_id, movie_id, rating, rating_time) VALUES (%s, %s, %s, CURRENT_TIMESTAMP)",
             (user_id, movie_id, rating.rating),
         )
     
@@ -57,8 +59,9 @@ async def rate_movie(movie_id: int, rating: RatingCreate, user: dict = Depends(g
 async def user_ratings(user_id: int):
     """获取用户评分历史"""
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     ensure_tables(cursor)
+    conn.commit()
     
     cursor.execute("""
         SELECT ur.movie_id, ur.rating, ur.rating_time,
@@ -74,7 +77,7 @@ async def user_ratings(user_id: int):
     conn.close()
     
     total = len(ratings)
-    avg = sum(r["rating"] for r in ratings) / total if total > 0 else 0
+    avg = sum(float(r["rating"]) for r in ratings) / total if total > 0 else 0
     
     return {
         "success": True,

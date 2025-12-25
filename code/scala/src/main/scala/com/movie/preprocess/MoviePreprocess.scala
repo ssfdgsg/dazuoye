@@ -17,7 +17,7 @@ object MoviePreprocess {
       .master("local[*]")
       .config("spark.driver.memory", "2g")
       .config("spark.executor.memory", "4g")
-      .config("spark.jars", "/home/a1386/Desktop/BigData/movieRecommendSystemV1/lib/mysql-connector-j-8.0.33.jar")
+      .config("spark.jars", "/home/a1386/Desktop/BigData/movieRecommendSystemV1/lib/postgresql-42.7.1.jar")
       .getOrCreate()
 
     import spark.implicits._
@@ -45,24 +45,24 @@ object MoviePreprocess {
         "hdfs://node1:9000/user/a1386/movie_data/processed/tmdb_movies"
       )
 
-      saveToMySQL(
+      saveToPostgreSQL(
         featureDF,
         "movie_basic",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "jdbc:postgresql://localhost:5432/movie_db"
       )
 
-      saveToMySQL(
+      saveToPostgreSQL(
         featureDF.select("movie_id", "keywords", "keyword_count", "production_companies", "tfidf_features"),
         "movie_features",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "jdbc:postgresql://localhost:5432/movie_db"
       )
 
       // 生成模拟评分
       val userRatingDF = generateSimulatedRatings(spark, featureDF)
-      saveToMySQL(
+      saveToPostgreSQL(
         userRatingDF,
         "user_ratings",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "jdbc:postgresql://localhost:5432/movie_db"
       )
 
       println("✅ 全量数据预处理完成（HDFS + MySQL）")
@@ -338,57 +338,22 @@ def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount:
     println(s"✅ 数据已保存至 HDFS: $path")
   }
 
-  /** 保存至 MySQL */
-  def saveToMySQL(df: DataFrame, tableName: String, jdbcUrl: String): Unit = {
+  /** 保存至 PostgreSQL */
+  def saveToPostgreSQL(df: DataFrame, tableName: String, jdbcUrl: String): Unit = {
     val jdbcProps = new java.util.Properties()
-    jdbcProps.setProperty("user", "root")
-    jdbcProps.setProperty("password", "root123")
-    jdbcProps.setProperty("driver", "com.mysql.cj.jdbc.Driver")
-
-    // 在执行 overwrite（内部会 drop 表）前，临时关闭外键检查，避免因为子表外键引用导致 DROP 失败
-    def execSqlStatements(statements: Seq[String]): Unit = {
-      var conn: java.sql.Connection = null
-      var stmt: java.sql.Statement = null
-      try {
-        Class.forName(jdbcProps.getProperty("driver"))
-        conn = java.sql.DriverManager.getConnection(jdbcUrl, jdbcProps.getProperty("user"), jdbcProps.getProperty("password"))
-        stmt = conn.createStatement()
-        statements.foreach(s => stmt.execute(s))
-      } finally {
-        if (stmt != null) try stmt.close() catch { case _: Exception => () }
-        if (conn != null) try conn.close() catch { case _: Exception => () }
-      }
-    }
+    jdbcProps.setProperty("user", "postgres")
+    jdbcProps.setProperty("password", "postgres")
+    jdbcProps.setProperty("driver", "org.postgresql.Driver")
 
     try {
-      // 如果要覆盖父表 movie_basic，先删除引用它的子表，避免不同 JDBC 连接的外键检查问题
-      if (tableName == "movie_basic") {
-        execSqlStatements(Seq(
-          "SET FOREIGN_KEY_CHECKS=0",
-          "DROP TABLE IF EXISTS movie_features",
-          "DROP TABLE IF EXISTS user_ratings",
-          "DROP TABLE IF EXISTS user_recommendations"
-        ))
-      } else {
-        // 普通写入也先尝试关闭外键检查以减少约束冲突概率
-        execSqlStatements(Seq("SET FOREIGN_KEY_CHECKS=0"))
-      }
-
       df.write
         .mode("overwrite")
         .jdbc(jdbcUrl, tableName, jdbcProps)
-      println(s"✅ 数据已同步至 MySQL 表: $tableName")
+      println(s"✅ 数据已同步至 PostgreSQL 表: $tableName")
     } catch {
       case e: Exception =>
-        println(s"❌ 写入 MySQL 表 $tableName 失败: ${e.getMessage}")
+        println(s"❌ 写入 PostgreSQL 表 $tableName 失败: ${e.getMessage}")
         throw e
-    } finally {
-      // 无论成功或失败，都尽量恢复外键检查
-      try {
-        execSqlStatements(Seq("SET FOREIGN_KEY_CHECKS=1"))
-      } catch {
-        case _: Exception => // 忽略恢复时的错误
-      }
     }
   }
 }

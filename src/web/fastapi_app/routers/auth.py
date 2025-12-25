@@ -1,6 +1,7 @@
 """认证路由"""
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Response, Depends
+from psycopg2.extras import RealDictCursor
 from models.schemas import UserRegister, UserLogin, UserResponse, SessionResponse, Token
 from dependencies import get_password_hash, verify_password, create_access_token, get_current_user_optional
 from database import get_connection, ensure_tables
@@ -12,8 +13,9 @@ router = APIRouter(prefix="/api", tags=["认证"])
 async def register(user: UserRegister, response: Response):
     """用户注册"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     ensure_tables(cursor)
+    conn.commit()
     
     cursor.execute("SELECT id FROM users WHERE username = %s", (user.username,))
     if cursor.fetchone():
@@ -23,11 +25,11 @@ async def register(user: UserRegister, response: Response):
     
     password_hash = get_password_hash(user.password)
     cursor.execute(
-        "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
+        "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING id",
         (user.username, password_hash),
     )
+    user_id = cursor.fetchone()["id"]
     conn.commit()
-    user_id = cursor.lastrowid
     cursor.close()
     conn.close()
     
@@ -44,8 +46,9 @@ async def login(user: UserLogin, response: Response):
     # 用户名密码登录
     if user.username:
         conn = get_connection()
-        cursor = conn.cursor(buffered=True, dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         ensure_tables(cursor)
+        conn.commit()
         
         cursor.execute(
             "SELECT id, username, password_hash FROM users WHERE username = %s",
@@ -68,7 +71,7 @@ async def login(user: UserLogin, response: Response):
     # 兼容旧版 user_id 登录
     if user.user_id:
         conn = get_connection()
-        cursor = conn.cursor(buffered=True, dictionary=True)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
             "SELECT DISTINCT user_id FROM user_ratings WHERE user_id = %s LIMIT 1",
             (user.user_id,),

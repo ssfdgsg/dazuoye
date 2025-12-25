@@ -2,12 +2,13 @@
 import random
 from typing import Optional
 from database import get_connection
+from psycopg2.extras import RealDictCursor
 
 
 def get_movie_detail(movie_id: int) -> Optional[dict]:
     """获取电影详情"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute("""
         SELECT 
@@ -53,14 +54,14 @@ def get_movie_detail(movie_id: int) -> Optional[dict]:
 def search_movies(query: str, limit: int = 20) -> list:
     """搜索电影"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     pattern = f"%{query}%"
     cursor.execute("""
         SELECT movie_id, title, genres, release_date, runtime, vote_average, vote_count, popularity_score
         FROM movie_basic
-        WHERE title LIKE %s OR genres LIKE %s OR keywords LIKE %s
-        ORDER BY popularity_score DESC, vote_average DESC
+        WHERE title ILIKE %s OR genres ILIKE %s OR keywords ILIKE %s
+        ORDER BY popularity_score DESC NULLS LAST, vote_average DESC NULLS LAST
         LIMIT %s
     """, (pattern, pattern, pattern, limit))
     
@@ -87,7 +88,7 @@ def search_movies(query: str, limit: int = 20) -> list:
 def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_to: str = "", limit: int = 50) -> list:
     """获取排行榜"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     sql = """
         SELECT movie_id, title, genres, release_date, runtime, vote_average, vote_count, popularity_score, revenue
@@ -102,15 +103,15 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
             "sci-fi": "Science Fiction", "romance": "Romance", "thriller": "Thriller"
         }
         db_genre = genre_map.get(genre.lower(), genre.title())
-        sql += " AND genres LIKE %s"
+        sql += " AND genres ILIKE %s"
         params.append(f"%{db_genre}%")
     
     # 年份筛选
     if year_from:
-        sql += " AND YEAR(release_date) >= %s"
+        sql += " AND EXTRACT(YEAR FROM release_date) >= %s"
         params.append(int(year_from))
     if year_to:
-        sql += " AND YEAR(release_date) <= %s"
+        sql += " AND EXTRACT(YEAR FROM release_date) <= %s"
         params.append(int(year_to))
     
     # 排序
@@ -121,7 +122,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
     elif rank_type == "new":
         sql += " AND release_date IS NOT NULL ORDER BY release_date DESC"
     elif rank_type == "boxoffice":
-        sql += " AND revenue IS NOT NULL AND revenue != '' ORDER BY CAST(revenue AS UNSIGNED) DESC"
+        sql += " AND revenue IS NOT NULL AND revenue != '' ORDER BY CAST(revenue AS BIGINT) DESC"
     else:
         cursor.close()
         conn.close()
@@ -154,7 +155,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
 def get_all_genres() -> list:
     """获取所有电影类型"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute("SELECT DISTINCT genres FROM movie_basic WHERE genres IS NOT NULL AND genres != ''")
     
@@ -174,19 +175,19 @@ def get_all_genres() -> list:
 def get_movies_by_genre(genre: str = "all", limit: int = 12) -> list:
     """按类型获取电影"""
     conn = get_connection()
-    cursor = conn.cursor(buffered=True, dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     if genre == "all" or not genre:
         cursor.execute("""
             SELECT movie_id, title, genres, release_date, vote_average, popularity_score
             FROM movie_basic WHERE vote_average IS NOT NULL
-            ORDER BY popularity_score DESC, vote_average DESC LIMIT %s
+            ORDER BY popularity_score DESC NULLS LAST, vote_average DESC NULLS LAST LIMIT %s
         """, (limit * 3,))
     else:
         cursor.execute("""
             SELECT movie_id, title, genres, release_date, vote_average, popularity_score
-            FROM movie_basic WHERE genres LIKE %s AND vote_average IS NOT NULL
-            ORDER BY popularity_score DESC, vote_average DESC LIMIT %s
+            FROM movie_basic WHERE genres ILIKE %s AND vote_average IS NOT NULL
+            ORDER BY popularity_score DESC NULLS LAST, vote_average DESC NULLS LAST LIMIT %s
         """, (f"%{genre}%", limit * 3))
     
     movies = cursor.fetchall()
