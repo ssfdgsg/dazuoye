@@ -1,0 +1,2 @@
+修改.sql中rank为recommend_rank 11.20 19:37
+脚本 ./testForModule/testPython.sh 能够运行，并且完整地输出了两个测试用例的结果。 11.21 14:41

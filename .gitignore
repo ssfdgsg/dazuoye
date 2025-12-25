@@ -1,0 +1,146 @@
+# Build artifacts
+target/
+build/
+lib/
+
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+logs/
+*.log
+
+# Other
+.DS_Store
+*.class
+*webp
+
+# =================== 项目构建产物 ===================
+# Java/Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Scala/SBT (如果使用 SBT)
+.project
+.scala_dependencies
+lib_managed/
+src_managed/
+target/
+
+# Node.js / npm / yarn
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+dist/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.pyup.yml
+.requirements
+
+# C/C++
+*.o
+*.out
+*.a
+*.so
+*.dSYM/
+obj/
+*.obj
+*.exe
+
+# =================== 编译/打包文件 ===================
+# JAR/WAR/EAR 等可执行包
+*.jar
+*.war
+*.ear
+*.zip
+*.tar
+*.gz
+
+# 项目生成的可执行文件
+*.class
+
+# =================== 日志和临时文件 ===================
+*.log
+logs/
+tmp/
+.DS_Store
+Thumbs.db
+node_modules/*
+
+# 本地配置文件（避免提交个人配置）
+config/
+conf/local.properties
+conf/application.conf
+conf/log4j.properties # 如果有本地覆盖，否则可以保留
+
+# =================== IDE 和编辑器 ===================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+
+# NetBeans
+nbproject/
+
+# Eclipse
+.settings/
+bin/
+.metadata
+
+# =================== 操作系统 ===================
+# Linux/Unix
+*~
+
+# Windows
+[Tt]humbs.db
+*.lnk
+Desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+Icon?

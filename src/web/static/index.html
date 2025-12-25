@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影推荐系统 - 首页</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #111827;
+            --muted: #94a3b8;
+            --text: #e5e7eb;
+            --primary: #22d3ee;
+            --primary-strong: #548ba5;
+            --border: #1f2937;
+            --accent: #a855f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text);
+            line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.1) 0%, rgba(168, 85, 247, 0.05) 50%, transparent 100%);
+            pointer-events: none;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-bar input {
+            padding: 0.6rem 2rem 0.6rem 1rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+        }
+
+        .search-bar i {
+            position: absolute;
+            right: 0.8rem;
+            color: var(--muted);
+        }
+
+        .login-btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            color: #0b1220;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.3);
+        }
+
+        /* 用户下拉菜单样式 */
+        .user-menu {
+            position: relative;
+            display: none;
+        }
+
+        .user-menu.active {
+            display: block;
+        }
+
+        .user-name {
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            color: #0b1220;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-name:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .user-name i {
+            font-size: 0.9rem;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            min-width: 200px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .user-menu:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 0.8rem 1.2rem;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(34, 211, 238, 0.1);
+            padding-left: 1.5rem;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            color: var(--primary);
+        }
+
+        .dropdown-item.user-info {
+            cursor: default;
+            background: rgba(34, 211, 238, 0.05);
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .dropdown-item.user-info:hover {
+            background: rgba(34, 211, 238, 0.05);
+            padding-left: 1.2rem;
+        }
+
+        .dropdown-item.user-info strong {
+            color: var(--text);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem 0;
+        }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .hero-section p {
+            font-size: 1.2rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        .main-search {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .main-search input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .main-search input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            color: #0b1220;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .search-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .section-title .refresh-btn {
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .section-title .refresh-btn:hover {
+            background: var(--primary);
+            color: #0b1220;
+        }
+
+        .section-title .refresh-hint {
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        /* 搜索结果样式 */
+        .search-results-section {
+            display: none;
+            margin: 3rem 0;
+        }
+
+        .search-results-section.active {
+            display: block;
+        }
+
+        .search-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-results-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-results-info {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .clear-search-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-search-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--muted);
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .genre-section {
+            margin-bottom: 4rem;
+        }
+
+        .genre-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .genre-tab {
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .genre-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .genre-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            color: #0b1220;
+            border-color: var(--primary);
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .movie-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .movie-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .movie-info {
+            padding: 1rem;
+        }
+
+        .movie-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .movie-rating {
+            display: flex;
+            align-items: center;
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+
+        .movie-rating i {
+            margin-right: 0.3rem;
+        }
+
+        .recommendations-section {
+            margin-bottom: 4rem;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+            position: relative;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .social-links {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .social-links a {
+            color: var(--muted);
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .copyright {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+
+            .hero-section p {
+                font-size: 1rem;
+            }
+
+            .main-search {
+                flex-direction: column;
+            }
+
+            .movie-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .movie-poster {
+                height: 225px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .genre-tabs {
+                gap: 0.5rem;
+            }
+
+            .genre-tab {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .movie-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+
+            .movie-poster {
+                height: 180px;
+            }
+        }
+    </style>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">电影推荐系统</div>
+            <ul class="nav-links">
+                <li><a href="/">首页</a></li>
+                <li><a href="/static/recommend.html">训练进度</a></li>
+                <li><a href="/static/movie_rank.html">排行榜</a></li>
+            </ul>
+            <div class="nav-actions">
+                <div class="search-bar">
+                    <input type="text" placeholder="搜索电影...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <!-- 登录按钮 -->
+                <a href="/static/login.html" class="login-btn" id="loginBtn">登录</a>
+                <!-- 用户菜单 -->
+                <div class="user-menu" id="userMenu">
+                    <div class="user-name" id="userName">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="userNameText">用户</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item user-info">
+                            <i class="fas fa-user"></i>
+                            <span>用户名: <strong id="dropdownUsername">-</strong></span>
+                        </div>
+                        <div class="dropdown-item user-info">
+                            <i class="fas fa-id-card"></i>
+                            <span>ID: <strong id="dropdownUserId">-</strong></span>
+                        </div>
+                        <a href="#" class="dropdown-item" id="ratingHistoryLink">
+                            <i class="fas fa-star"></i>
+                            <span>用户评分表</span>
+                        </a>
+                        <a href="#" class="dropdown-item" id="logoutLink">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>退出登录</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <h1>发现精彩电影</h1>
+            <p>探索海量电影资源，发现您的下一部最爱</p>
+            <div class="main-search">
+                <input type="text" id="main-search-input" placeholder="搜索电影、导演或演员...">
+                <button class="search-button">
+                    <i class="fas fa-search"></i> 搜索
+                </button>
+            </div>
+        </section>
+
+        <!-- 搜索结果区域 -->
+        <section class="search-results-section" id="searchResults">
+            <div class="search-results-header">
+                <div>
+                    <h2 class="search-results-title">搜索结果</h2>
+                    <p class="search-results-info" id="searchResultsInfo"></p>
+                </div>
+                <button class="clear-search-btn" onclick="clearSearch()">
+                    <i class="fas fa-times"></i> 清除搜索
+                </button>
+            </div>
+            <div class="movie-grid" id="searchMovies">
+                <!-- 搜索结果将通过JavaScript动态加载 -->
+            </div>
+        </section>
+
+        <section class="genre-section" id="genreSection">
+            <h2 class="section-title">按类型浏览</h2>
+            <div class="genre-tabs">
+                <div class="genre-tab active" data-genre="all">全部</div>
+                <div class="genre-tab" data-genre="action">动作</div>
+                <div class="genre-tab" data-genre="comedy">喜剧</div>
+                <div class="genre-tab" data-genre="drama">剧情</div>
+                <div class="genre-tab" data-genre="romance">爱情</div>
+                <div class="genre-tab" data-genre="scifi">科幻</div>
+                <div class="genre-tab" data-genre="horror">恐怖</div>
+                <div class="genre-tab" data-genre="animation">动画</div>
+            </div>
+            <div class="movie-grid" id="genreMovies">
+                <!-- 电影列表将通过JavaScript动态加载 -->
+            </div>
+        </section>
+
+        <section class="recommendations-section">
+            <h2 class="section-title">猜你喜欢
+                <button id="refreshRecsBtn" class="refresh-btn" title="刷新推荐">
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+                <span class="refresh-hint">预计时间30s-60s</span>
+            </h2>
+            <div class="movie-grid" id="recommendedMovies">
+                <!-- 推荐电影将通过JavaScript动态加载 -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <!-- 底部内容已清理 -->
+        </div>
+    </footer>
+
+    <script>
+        // 类型映射表（中文到英文）
+        const genreMap = {
+            '全部': 'all',
+            '动作': 'Action',
+            '喜剧': 'Comedy',
+            '剧情': 'Drama',
+            '爱情': 'Romance',
+            '科幻': 'Science Fiction',
+            '恐怖': 'Horror',
+            '动画': 'Animation'
+        };
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            checkLoginStatus();
+            // 加载全部电影
+            loadMoviesByGenre('all');
+            // 加载推荐电影（如有需要强制刷新则强制）
+            const needForce = localStorage.getItem('recommendNeedsRefresh') === '1';
+            loadRecommendedMovies(needForce);
+            if (needForce) localStorage.removeItem('recommendNeedsRefresh');
+            // 初始化类型标签点击事件
+            initializeGenreTabs();
+            // 初始化搜索功能
+            initializeSearch();
+            // 初始化刷新按钮
+            const refreshBtn = document.getElementById('refreshRecsBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => loadRecommendedMovies(true));
+            }
+        });
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/session');
+                const data = await res.json();
+                if (data.logged_in) {
+                    console.log('用户已登录:', data.user_id);
+                    // 显示用户菜单，隐藏登录按钮
+                    document.getElementById('loginBtn').style.display = 'none';
+                    document.getElementById('userMenu').classList.add('active');
+                    document.getElementById('userNameText').textContent = data.username || '用户';
+                    document.getElementById('dropdownUsername').textContent = data.username || '未知';
+                    document.getElementById('dropdownUserId').textContent = data.user_id || '-';
+                    
+                    // 设置用户评分表链接
+                    const ratingHistoryLink = document.getElementById('ratingHistoryLink');
+                    ratingHistoryLink.href = `/static/user_ratings.html?user_id=${data.user_id}`;
+                    
+                    // 设置退出登录事件
+                    document.getElementById('logoutLink').addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            await fetch('/api/logout', { method: 'POST' });
+                            window.location.reload();
+                        } catch (err) {
+                            console.error('退出登录失败:', err);
+                        }
+                    });
+                } else {
+                    // 显示登录按钮，隐藏用户菜单
+                    document.getElementById('loginBtn').style.display = 'block';
+                    document.getElementById('userMenu').classList.remove('active');
+                }
+            } catch (err) {
+                console.error('检查登录状态失败:', err);
+            }
+        }
+
+        // 初始化类型标签点击事件
+        function initializeGenreTabs() {
+            const genreTabs = document.querySelectorAll('.genre-tab');
+            genreTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有active类
+                    genreTabs.forEach(t => t.classList.remove('active'));
+                    // 添加当前active类
+                    this.classList.add('active');
+                    // 加载对应类型的电影
+                    const genre = this.dataset.genre;
+                    loadMoviesByGenre(genre);
+                });
+            });
+        }
+
+        // 根据类型加载电影
+        async function loadMoviesByGenre(genre) {
+            const movieGrid = document.getElementById('genreMovies');
+            movieGrid.innerHTML = '<p style="color: #94a3b8; text-align: center;">加载中...</p>';
+
+            try {
+                const res = await fetch(`/api/movies/by-genre?genre=${encodeURIComponent(genre)}&limit=12`);
+                const data = await res.json();
+
+                if (data.error) {
+                    movieGrid.innerHTML = `<p style="color: #f87171;">加载失败：${data.error}</p>`;
+                    return;
+                }
+
+                if (!data.movies || data.movies.length === 0) {
+                    movieGrid.innerHTML = '<p style="color: #94a3b8;">暂无电影</p>';
+                    return;
+                }
+
+                // 渲染电影列表
+                renderMovies(data.movies, movieGrid);
+            } catch (err) {
+                console.error('加载电影失败:', err);
+                movieGrid.innerHTML = `<p style="color: #f87171;">网络错误：${err.message}</p>`;
+            }
+        }
+
+        // 加载推荐电影
+        async function loadRecommendedMovies(force = false) {
+            const movieGrid = document.getElementById('recommendedMovies');
+            movieGrid.innerHTML = '<p style="color: #94a3b8; text-align: center;">加载中...</p>';
+
+            try {
+            const url = `/api/movies/recommendations?topN=12${force ? '&force=1&_=' + Date.now() : ''}`;
+            const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.error) {
+                    movieGrid.innerHTML = `<p style="color: #f87171;">加载失败：${data.error}</p>`;
+                    return;
+                }
+
+                if (!data.movies || data.movies.length === 0) {
+                    movieGrid.innerHTML = '<p style="color: #94a3b8;">暂无推荐</p>';
+                    return;
+                }
+
+                // 渲染推荐电影
+                renderMovies(data.movies, movieGrid);
+                
+                // 显示推荐方法（调试用）
+                if (data.method) {
+                    console.log('推荐方法:', data.method, '用户ID:', data.user_id);
+                }
+            } catch (err) {
+                console.error('加载推荐失败:', err);
+                movieGrid.innerHTML = `<p style="color: #f87171;">网络错误：${err.message}</p>`;
+            }
+        }
+
+        // 渲染电影列表
+        function renderMovies(movies, container) {
+            if (!movies || movies.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8;">暂无电影</p>';
+                return;
+            }
+
+            container.innerHTML = movies.map(movie => `
+                <div class="movie-item" onclick="goToMovieDetail(${movie.id})">
+                    <img src="${movie.poster}" alt="${escapeHtml(movie.title)}" class="movie-poster" 
+                         onerror="this.src='img/default.webp'; this.onerror=null;">
+                    <div class="movie-info">
+                        <div class="movie-title">${escapeHtml(movie.title)}</div>
+                        <div class="movie-rating">
+                            <i class="fas fa-star"></i>
+                            <span>${movie.rating ? movie.rating.toFixed(1) : 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // HTML 转义函数
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // 跳转到电影详情页
+        function goToMovieDetail(movieId) {
+            window.location.href = `/static/movie.html?id=${movieId}`;
+        }
+
+        // 初始化搜索功能
+        function initializeSearch() {
+            const searchInputs = document.querySelectorAll('input[type="text"]');
+            searchInputs.forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchMovies(this.value);
+                    }
+                });
+            });
+
+            const searchButtons = document.querySelectorAll('.search-button');
+            searchButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const input = this.closest('.main-search')?.querySelector('input');
+                    if (input) {
+                        searchMovies(input.value);
+                    }
+                });
+            });
+        }
+
+        // 搜索电影
+        async function searchMovies(query) {
+            if (!query.trim()) return;
+            
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=50`);
+                
+                if (!response.ok) {
+                    throw new Error('Search failed');
+                }
+
+                const data = await response.json();
+                displaySearchResults(data);
+                
+            } catch (error) {
+                console.error('Error searching movies:', error);
+                alert('搜索失败，请稍后重试');
+            }
+        }
+
+        // 显示搜索结果
+        function displaySearchResults(data) {
+            const searchSection = document.getElementById('searchResults');
+            const searchMoviesGrid = document.getElementById('searchMovies');
+            const searchInfo = document.getElementById('searchResultsInfo');
+            const genreSection = document.getElementById('genreSection');
+            const recommendationsSection = document.querySelector('.recommendations-section');
+            
+            // 显示搜索结果区域，隐藏其他区域
+            searchSection.classList.add('active');
+            if (genreSection) genreSection.style.display = 'none';
+            if (recommendationsSection) recommendationsSection.style.display = 'none';
+            
+            // 更新搜索信息
+            searchInfo.textContent = `找到 ${data.total} 部相关电影：${data.query}`;
+            
+            if (data.results.length === 0) {
+                searchMoviesGrid.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-film"></i>
+                        <h3>未找到相关电影</h3>
+                        <p>尝试使用不同的关键词搜索</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 渲染搜索结果
+            renderMovies(data.results, searchMoviesGrid);
+        }
+
+        // 清除搜索
+        function clearSearch() {
+            const searchSection = document.getElementById('searchResults');
+            const genreSection = document.getElementById('genreSection');
+            const recommendationsSection = document.querySelector('.recommendations-section');
+            const searchInputs = document.querySelectorAll('input[type="text"]');
+            
+            // 隐藏搜索结果，显示其他区域
+            searchSection.classList.remove('active');
+            if (genreSection) genreSection.style.display = 'block';
+            if (recommendationsSection) recommendationsSection.style.display = 'block';
+            
+            // 清空搜索框
+            searchInputs.forEach(input => input.value = '');
+        }
+    </script>
+</body>
+</html>
