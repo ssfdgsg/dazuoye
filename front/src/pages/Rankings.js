@@ -30,32 +30,23 @@ function Rankings() {
   const [yearTo, setYearTo] = useState('');
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const limit = 20;
 
   useEffect(() => {
     loadRankings(true);
   }, [rankType, genre, yearFrom, yearTo]);
 
   const loadRankings = async (reset = false) => {
-    const offset = reset ? 0 : page * limit;
     setLoading(true);
     try {
-      const data = await getRankings(rankType, limit, offset, {
+      const data = await getRankings(rankType, 50, 0, {
         genre,
         yearFrom,
         yearTo,
       });
-      if (reset) {
-        setMovies(data.movies || []);
-        setPage(1);
-      } else {
-        setMovies((prev) => [...prev, ...(data.movies || [])]);
-        setPage((p) => p + 1);
-      }
-      setHasMore((data.movies || []).length === limit);
+      setMovies(data || []);
+      setHasMore(false);
     } catch (err) {
       console.error('Failed to load rankings:', err);
     } finally {
@@ -179,12 +170,6 @@ function Rankings() {
         <div className="loading-more">
           <div className="spinner" />
         </div>
-      )}
-
-      {!loading && hasMore && (
-        <button className="load-more-btn" onClick={() => loadRankings()}>
-          加载更多
-        </button>
       )}
     </div>
   );

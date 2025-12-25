@@ -42,7 +42,6 @@ export const getRankings = (type = 'rating', limit = 20, offset = 0, options = {
   const params = new URLSearchParams({
     type,
     limit: String(limit),
-    offset: String(offset),
   });
   if (options.genre && options.genre !== 'all') params.append('genre', options.genre);
   if (options.yearFrom) params.append('year_from', options.yearFrom);

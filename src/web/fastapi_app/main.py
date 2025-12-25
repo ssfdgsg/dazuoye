@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="电影推荐系统 API",
     description="基于 ALS 协同过滤和 TF-IDF 内容推荐的电影推荐系统",
-    version="1.0.0",
+    version="1.0.1",
     lifespan=lifespan,
 )
 
