@@ -135,7 +135,6 @@ function MovieDetail() {
               <span className="meta-item">🎭 {movie.genres.join(' / ')}</span>
             )}
           </div>
-          <p className="detail-overview">{movie.overview || '暂无简介'}</p>
           {movie.keywords?.length > 0 && (
             <div className="detail-keywords">
               {movie.keywords.slice(0, 6).map((kw, i) => (
