@@ -76,11 +76,13 @@ def enqueue_user_for_recompute(user_id: int):
 
 
 def _recompute_user_recommendations(user_id: int, topN: int = 80):
-    """调用 ALS 脚本重算用户推荐"""
+    """调用 ALS 脚本重算用户推荐，失败时回退到 User-CF"""
     script_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "..", "..", "code", "python", "movie_recommender.py")
     )
-    cmd = ["python3.8", script_path, "--user_id", str(user_id), "--topN", str(topN)]
+    
+    # 先尝试 ALS
+    cmd = ["python3", script_path, "--user_id", str(user_id), "--topN", str(topN)]
 
     def _apply_progress_marker(marker: str):
         marker = marker.strip().lower()
@@ -145,8 +147,37 @@ def _recompute_user_recommendations(user_id: int, topN: int = 80):
 
         exit_code = proc.wait(timeout=6200)
         if exit_code != 0:
-            _user_log(user_id, f"ALS 推理失败，退出码 {exit_code}")
-            _user_task_update(user_id, message=f"ALS 推理失败：{exit_code}")
+            # ALS 失败，尝试 User-CF 回退
+            _user_log(user_id, f"ALS 推理失败（退出码 {exit_code}），尝试 User-CF 回退...")
+            _user_task_update(user_id, progress=30, message="ALS 失败，尝试 User-CF...")
+            
+            # 尝试 User-CF
+            cmd_cf = ["python3", script_path, "--user_cf", str(user_id), "--topN", str(topN)]
+            try:
+                proc_cf = subprocess.run(cmd_cf, capture_output=True, text=True, timeout=120)
+                if proc_cf.returncode == 0 and proc_cf.stdout:
+                    data = json.loads(proc_cf.stdout.strip())
+                    recs = data.get("recommendations") or []
+                    if recs:
+                        _user_log(user_id, f"User-CF 成功，获得 {len(recs)} 条推荐")
+                        # 保存到数据库
+                        conn = get_connection()
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM user_recommendations WHERE user_id = %s", (user_id,))
+                        rows = [(user_id, int(r.get("movie_id")), float(r.get("predict_rating")) if r.get("predict_rating") else None) for r in recs if r.get("movie_id")]
+                        if rows:
+                            cursor.executemany("INSERT INTO user_recommendations (user_id, movie_id, predicted_rating) VALUES (%s, %s, %s)", rows)
+                        conn.commit()
+                        cursor.close()
+                        conn.close()
+                        _user_task_update(user_id, status="done", progress=100, finished_at=time.time(), message="完成（User-CF）", result_count=len(rows), method="user_cf")
+                        _user_log(user_id, "完成：推荐已更新（User-CF）")
+                        return True
+            except Exception as e:
+                _user_log(user_id, f"User-CF 也失败: {e}")
+            
+            # 都失败了，回退到热门
+            _user_task_update(user_id, status="error", message="推荐计算失败，使用热门回退", last_error=f"ALS 退出码 {exit_code}")
             return False
 
         with open(out_path, "r") as f:

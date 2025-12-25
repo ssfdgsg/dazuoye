@@ -142,7 +142,7 @@ def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, for
             script_path = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), "..", "..", "..", "code", "python", "movie_recommender.py")
             )
-            cmd = ["python3.8", script_path, "--user_id", str(user_id), "--topN", str(topN)]
+            cmd = ["python3", script_path, "--user_id", str(user_id), "--topN", str(topN)]
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             if proc.returncode == 0 and proc.stdout:
                 data = json.loads(proc.stdout.strip())
