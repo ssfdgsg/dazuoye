@@ -73,7 +73,7 @@ fi
 
 # 初始化PostgreSQL数据库
 echo "正在初始化PostgreSQL数据库..."
-PGPASSWORD=$PG_PASS psql -U $PG_USER -f $PROJECT_DIR/code/sql/movie_tables.sql
+PGPASSWORD=$PG_PASS psql -h localhost -U $PG_USER -f $PROJECT_DIR/code/sql/movie_tables.sql
 if [ $? -eq 0 ]; then
     echo "✅ PostgreSQL数据库初始化完成"
 else
