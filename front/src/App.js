@@ -10,6 +10,7 @@ import Rankings from './pages/Rankings';
 import Browse from './pages/Browse';
 import UserRatings from './pages/UserRatings';
 import Search from './pages/Search';
+import Compare from './pages/Compare';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="rankings" element={<Rankings />} />
           <Route path="browse" element={<Browse />} />
           <Route path="search" element={<Search />} />
+          <Route path="compare" element={<Compare />} />
           <Route path="user/ratings" element={<UserRatings />} />
         </Route>
         <Route path="/login" element={<Login />} />
