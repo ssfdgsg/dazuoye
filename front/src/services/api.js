@@ -1,13 +1,35 @@
 const API_BASE = '/api';
 
 async function request(url, options = {}) {
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
+  try {
+    const res = await fetch(`${API_BASE}${url}`, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    
+    // 检查响应内容类型
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      if (!res.ok) {
+        throw new Error(`请求失败: ${res.status} ${res.statusText}`);
+      }
+      // 非 JSON 响应但成功
+      const text = await res.text();
+      return { success: true, message: text };
+    }
+    
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || data.error || '请求失败');
+    }
+    return data;
+  } catch (err) {
+    // 网络错误或 JSON 解析错误
+    if (err.name === 'SyntaxError') {
+      throw new Error('服务器响应格式错误');
+    }
+    throw err;
+  }
 }
 
 // 认证

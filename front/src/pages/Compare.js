@@ -55,10 +55,12 @@ function Compare() {
     }
     setSearching(true);
     try {
-      const results = await searchMovies(query, 8);
-      setSearchResults(results || []);
+      const data = await searchMovies(query, 8);
+      // API 返回格式是 { query, total, results }
+      setSearchResults(data.results || []);
     } catch (err) {
       console.error('Search failed:', err);
+      setSearchResults([]);
     } finally {
       setSearching(false);
     }
