@@ -16,7 +16,8 @@ async def similar_movies(movie_id: int, limit: int = Query(12, ge=1, le=50)):
     """获取相似电影"""
     results = get_similar_movies(movie_id, limit)
     if results is None:
-        raise HTTPException(status_code=404, detail=f"Movie ID {movie_id} not found or has no TF-IDF features")
+        # 返回空数组而不是404，让前端可以正常处理
+        return []
     return results
 
 

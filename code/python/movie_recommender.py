@@ -64,6 +64,138 @@ def check_als_model_exists(model_path):
     except:
         return False
 
+# User-CF：基于用户协同过滤推荐
+def recommend_by_user_cf(db_conn, user_id, topN, sim_user_count=20):
+    """
+    User-CF 算法：
+    1. 计算目标用户与其他用户的评分相似度（皮尔逊相关系数）
+    2. 找到最相似的 K 个用户
+    3. 用相似用户的评分加权预测目标用户未看过的电影评分
+    """
+    cursor = db_conn.cursor(cursor_factory=RealDictCursor)
+    
+    if not check_table_exists(db_conn, "user_ratings"):
+        return {"error": "user_ratings 表不存在，请先运行数据预处理"}
+    
+    # 1. 获取目标用户的评分
+    cursor.execute("SELECT movie_id, rating FROM user_ratings WHERE user_id = %s", (user_id,))
+    target_ratings = {r['movie_id']: float(r['rating']) for r in cursor.fetchall()}
+    
+    if not target_ratings:
+        return {"error": f"用户 {user_id} 没有评分记录，无法使用 User-CF"}
+    
+    # 2. 获取所有其他用户的评分
+    cursor.execute("""
+        SELECT user_id, movie_id, rating 
+        FROM user_ratings 
+        WHERE user_id != %s
+    """, (user_id,))
+    all_ratings = cursor.fetchall()
+    
+    # 按用户分组
+    user_ratings_map = {}
+    for r in all_ratings:
+        uid = r['user_id']
+        if uid not in user_ratings_map:
+            user_ratings_map[uid] = {}
+        user_ratings_map[uid][r['movie_id']] = float(r['rating'])
+    
+    # 3. 计算与每个用户的皮尔逊相关系数
+    similarities = []
+    target_mean = np.mean(list(target_ratings.values()))
+    
+    for other_uid, other_ratings in user_ratings_map.items():
+        # 找共同评分的电影
+        common_movies = set(target_ratings.keys()) & set(other_ratings.keys())
+        if len(common_movies) < 3:  # 至少3部共同电影才计算
+            continue
+        
+        # 皮尔逊相关系数
+        other_mean = np.mean(list(other_ratings.values()))
+        
+        numerator = 0.0
+        denom_target = 0.0
+        denom_other = 0.0
+        
+        for mid in common_movies:
+            diff_target = target_ratings[mid] - target_mean
+            diff_other = other_ratings[mid] - other_mean
+            numerator += diff_target * diff_other
+            denom_target += diff_target ** 2
+            denom_other += diff_other ** 2
+        
+        denom = np.sqrt(denom_target) * np.sqrt(denom_other)
+        if denom > 1e-9:
+            sim = numerator / denom
+            if sim > 0:  # 只保留正相关用户
+                similarities.append((other_uid, sim, other_ratings))
+    
+    if not similarities:
+        return {"user_id": user_id, "recommendations": [], "method": "user_cf", "message": "没有找到相似用户"}
+    
+    # 4. 取最相似的 K 个用户
+    similarities.sort(key=lambda x: x[1], reverse=True)
+    top_similar_users = similarities[:sim_user_count]
+    
+    # 5. 预测未评分电影的分数
+    candidate_movies = set()
+    for _, _, ratings in top_similar_users:
+        candidate_movies.update(ratings.keys())
+    candidate_movies -= set(target_ratings.keys())  # 排除已评分电影
+    
+    predictions = []
+    for mid in candidate_movies:
+        weighted_sum = 0.0
+        sim_sum = 0.0
+        
+        for other_uid, sim, other_ratings in top_similar_users:
+            if mid in other_ratings:
+                weighted_sum += sim * other_ratings[mid]
+                sim_sum += abs(sim)
+        
+        if sim_sum > 0:
+            pred_rating = weighted_sum / sim_sum
+            predictions.append({'movie_id': mid, 'pred_rating': pred_rating})
+    
+    # 6. 排序取 TopN
+    predictions.sort(key=lambda x: x['pred_rating'], reverse=True)
+    top_predictions = predictions[:topN]
+    
+    if not top_predictions:
+        return {"user_id": user_id, "recommendations": [], "method": "user_cf"}
+    
+    # 7. 获取电影详情
+    movie_ids = [p['movie_id'] for p in top_predictions]
+    placeholders = ','.join(['%s'] * len(movie_ids))
+    cursor.execute(f"""
+        SELECT movie_id, title, genres, release_date, vote_average 
+        FROM movie_basic 
+        WHERE movie_id IN ({placeholders})
+    """, movie_ids)
+    movies = {m['movie_id']: m for m in cursor.fetchall()}
+    
+    results = []
+    for pred in top_predictions:
+        mid = pred['movie_id']
+        if mid in movies:
+            m = movies[mid]
+            results.append({
+                "movie_id": mid,
+                "title": m["title"],
+                "genre": m["genres"],
+                "release_date": str(m["release_date"]) if m["release_date"] else "未知",
+                "vote_average": float(m["vote_average"]) if m["vote_average"] else 0.0,
+                "predict_rating": round(pred['pred_rating'], 2)
+            })
+    
+    return {
+        "user_id": user_id, 
+        "recommendations": results, 
+        "method": "user_cf",
+        "similar_users_count": len(top_similar_users)
+    }
+
+
 def recommend_by_genre(db_conn, genre, topN):
     """
     推荐指定类别的前N个电影，按评分（vote_average）降序。
@@ -392,7 +524,8 @@ def main():
     parser = argparse.ArgumentParser(description="电影推荐服务")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--movie_id", type=int, help="电影ID（相似推荐）")
-    group.add_argument("--user_id", type=int, help="用户ID（个性化推荐）")
+    group.add_argument("--user_id", type=int, help="用户ID（个性化推荐，使用ALS）")
+    group.add_argument("--user_cf", type=int, help="用户ID（User-CF协同过滤推荐）")
     group.add_argument("--genre", type=str, help="电影类别（如 Comedy、Action 等）")
     parser.add_argument("--topN", type=int, default=10, help="推荐数量")
 
@@ -402,7 +535,7 @@ def main():
     db_conn = None
 
     try:
-        # 只有基于用户/电影推荐才需要 Spark
+        # 只有基于用户/电影推荐才需要 Spark（User-CF 不需要）
         if args.movie_id or args.user_id:
             spark = init_spark()
         db_conn = init_db()
@@ -411,6 +544,8 @@ def main():
             result = recommend_by_movie(spark, db_conn, args.movie_id, args.topN)
         elif args.user_id:
             result = recommend_by_user(spark, db_conn, args.user_id, args.topN)
+        elif args.user_cf:
+            result = recommend_by_user_cf(db_conn, args.user_cf, args.topN)
         elif args.genre:
             result = recommend_by_genre(db_conn, args.genre, args.topN)
         else:

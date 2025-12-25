@@ -57,9 +57,11 @@ function MovieDetail() {
   const loadSimilarMovies = async () => {
     try {
       const data = await getSimilarMovies(id, 6);
-      setSimilarMovies(data || []);
+      // 确保返回的是数组
+      setSimilarMovies(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load similar movies:', err);
+      setSimilarMovies([]);
     }
   };
 
