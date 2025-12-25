@@ -18,11 +18,11 @@ function Home() {
 
   // 轮询 ALS 任务状态
   useEffect(() => {
-    if (!user) return;
+    if (!user || !user.id) return;
     let interval;
     const checkTask = async () => {
       try {
-        const task = await getALSTask(user.userId);
+        const task = await getALSTask(user.id);
         setAlsTask(task);
         if (task.status === 'done') {
           loadRecommendations();
