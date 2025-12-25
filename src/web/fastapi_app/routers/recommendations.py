@@ -63,15 +63,30 @@ async def user_recommend_cf(user_id: int, topN: int = Query(10, ge=1, le=50)):
     
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        if proc.returncode == 0 and proc.stdout:
-            data = json.loads(proc.stdout.strip())
-            return data
+        output = proc.stdout.strip() if proc.stdout else ""
+        
+        if proc.returncode == 0 and output:
+            try:
+                data = json.loads(output)
+                # 如果返回了 error 字段，也正常返回让前端处理
+                return data
+            except json.JSONDecodeError:
+                # 尝试提取最后一行 JSON
+                lines = output.split('\n')
+                for line in reversed(lines):
+                    try:
+                        data = json.loads(line)
+                        return data
+                    except:
+                        continue
+                return {"user_id": user_id, "recommendations": [], "error": "推荐结果解析失败"}
         else:
-            raise HTTPException(status_code=500, detail="User-CF 推荐计算失败")
+            error_msg = proc.stderr[:200] if proc.stderr else "脚本执行失败"
+            return {"user_id": user_id, "recommendations": [], "error": error_msg}
     except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="推荐计算超时")
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="推荐结果解析失败")
+        return {"user_id": user_id, "recommendations": [], "error": "推荐计算超时"}
+    except Exception as e:
+        return {"user_id": user_id, "recommendations": [], "error": str(e)}
 
 
 @router.get("/movies/recommendations")
