@@ -24,7 +24,7 @@ object MoviePreprocess {
 
       val cleanedDF = cleanTMDBData(rawDF)
       val featureDF = buildMovieFeatures(cleanedDF, spark)
-        .filter(col("title").isNotNull && col("title") =!= "")
+        .filter(col("movie_id").isNotNull && col("title").isNotNull && col("title") =!= "")
 
       saveToHDFS(featureDF, "hdfs://node1:9000/user/a1386/movie_data/processed/tmdb_movies")
 
