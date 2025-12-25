@@ -148,9 +148,9 @@ object MoviePreprocess {
       if (budget == null || revenue == null || budget == 0L) 0.0 else revenue.toDouble / budget.toDouble
     })
     val popularityScoreUDF = udf((popularity: java.lang.Double, voteCount: java.lang.Integer) => {
-      val p = if (popularity == null) 0.0 else popularity
-      val v = if (voteCount == null) 0 else voteCount
-      p * 0.6 + (v.toDouble / 1000) * 0.4
+      val p: Double = if (popularity == null) 0.0 else popularity.doubleValue()
+      val v: Double = if (voteCount == null) 0.0 else voteCount.doubleValue()
+      p * 0.6 + (v / 1000) * 0.4
     })
 
     val tokenizer = new org.apache.spark.ml.feature.Tokenizer().setInputCol("overview").setOutputCol("words")
