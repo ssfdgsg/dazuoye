@@ -4,18 +4,18 @@ import { getMoviesByGenre } from '../services/api';
 import './Browse.css';
 
 const GENRES = [
-  { key: 'all', label: '全部', icon: '🎬' },
-  { key: 'Action', label: '动作', icon: '💥' },
-  { key: 'Comedy', label: '喜剧', icon: '😂' },
-  { key: 'Drama', label: '剧情', icon: '🎭' },
-  { key: 'Romance', label: '爱情', icon: '💕' },
-  { key: 'Science Fiction', label: '科幻', icon: '🚀' },
-  { key: 'Horror', label: '恐怖', icon: '👻' },
-  { key: 'Animation', label: '动画', icon: '🎨' },
-  { key: 'Thriller', label: '惊悚', icon: '😱' },
-  { key: 'Adventure', label: '冒险', icon: '🗺️' },
-  { key: 'Fantasy', label: '奇幻', icon: '🧙' },
-  { key: 'Crime', label: '犯罪', icon: '🔪' },
+  { key: 'all', label: '全部', icon: '🎬', color: '#6366f1' },
+  { key: 'Action', label: '动作', icon: '💥', color: '#ef4444' },
+  { key: 'Comedy', label: '喜剧', icon: '😂', color: '#f59e0b' },
+  { key: 'Drama', label: '剧情', icon: '🎭', color: '#8b5cf6' },
+  { key: 'Romance', label: '爱情', icon: '💕', color: '#ec4899' },
+  { key: 'Science Fiction', label: '科幻', icon: '🚀', color: '#06b6d4' },
+  { key: 'Horror', label: '恐怖', icon: '👻', color: '#6b7280' },
+  { key: 'Animation', label: '动画', icon: '🎨', color: '#14b8a6' },
+  { key: 'Thriller', label: '惊悚', icon: '😱', color: '#dc2626' },
+  { key: 'Adventure', label: '冒险', icon: '🗺️', color: '#10b981' },
+  { key: 'Fantasy', label: '奇幻', icon: '🧙', color: '#a855f7' },
+  { key: 'Crime', label: '犯罪', icon: '🔪', color: '#64748b' },
 ];
 
 function Browse() {
@@ -39,26 +39,49 @@ function Browse() {
     }
   };
 
+  const activeGenreData = GENRES.find(g => g.key === activeGenre);
+
   return (
-    <div className="browse container">
+    <div className="browse container fade-in">
       <div className="browse-header">
-        <h1 className="browse-title">📂 按类型浏览</h1>
-        <p className="browse-subtitle">选择你喜欢的电影类型</p>
+        <div className="header-content">
+          <h1 className="browse-title">🎬 电影类型库</h1>
+          <p className="browse-subtitle">探索你喜欢的电影类型，发现精彩作品</p>
+        </div>
       </div>
 
-      <div className="genre-tabs">
-        {GENRES.map((genre) => (
-          <button
-            key={genre.key}
-            className={`genre-tab ${activeGenre === genre.key ? 'active' : ''}`}
-            onClick={() => setActiveGenre(genre.key)}
-          >
-            {genre.icon} {genre.label}
-          </button>
-        ))}
+      <div className="genre-cloud-section">
+        <h2 className="section-title">选择类型</h2>
+        <div className="genre-cloud">
+          {GENRES.map((genre) => {
+            const isActive = activeGenre === genre.key;
+            return (
+              <button
+                key={genre.key}
+                className={`genre-tag ${isActive ? 'active' : ''}`}
+                onClick={() => setActiveGenre(genre.key)}
+                style={{
+                  '--tag-color': genre.color,
+                  '--tag-size': isActive ? '1.2' : '1',
+                }}
+              >
+                <span className="tag-icon">{genre.icon}</span>
+                <span className="tag-label">{genre.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="browse-content">
+        <div className="content-header">
+          <div className="active-genre-badge" style={{ backgroundColor: activeGenreData?.color }}>
+            <span className="badge-icon">{activeGenreData?.icon}</span>
+            <span className="badge-text">{activeGenreData?.label}</span>
+          </div>
+          <span className="movie-count">{movies.length} 部电影</span>
+        </div>
+
         {loading ? (
           <div className="movie-grid">
             {[...Array(12)].map((_, i) => <MovieCardSkeleton key={i} />)}
