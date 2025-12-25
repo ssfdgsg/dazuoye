@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import MovieCard, { MovieCardSkeleton } from '../components/MovieCard';
 import { getMoviesByGenre, getRecommendations, getALSTask } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,8 +17,6 @@ const GENRES = [
 
 function Home() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('all');
   const [genreMovies, setGenreMovies] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
@@ -89,27 +86,11 @@ function Home() {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
   return (
     <div className="home container">
       <section className="hero">
         <h1 className="hero-title">发现你的下一部最爱</h1>
         <p className="hero-subtitle">基于智能推荐算法，为你精选好电影</p>
-        <form className="hero-search" onSubmit={handleSearch}>
-          <input
-            type="text"
-            placeholder="搜索电影、导演或演员..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit">搜索</button>
-        </form>
       </section>
 
       <section className="section">
