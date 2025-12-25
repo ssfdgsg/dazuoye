@@ -91,7 +91,7 @@ function Layout() {
 
       <footer className="footer">
         <div className="container footer-content">
-          <p>© 2024 CineMatch 电影推荐系统</p>
+          <p>© 2025 影视阁 电影推荐系统</p>
         </div>
       </footer>
     </div>

@@ -48,7 +48,7 @@ function Register() {
       <div className="auth-container">
         <Link to="/" className="auth-logo">
           <span className="auth-logo-icon">🎬</span>
-          <span>CineMatch</span>
+          <span>影视阁</span>
         </Link>
 
         <h1 className="auth-title">创建账号</h1>
