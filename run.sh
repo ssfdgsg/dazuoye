@@ -1,6 +1,6 @@
 #!/bin/bash
 # 电影推荐系统一键部署运行脚本
-# 适用环境：Java 1.8 + Hadoop 3.1.3 + Spark 3.1.3 + MySQL 8.0 + Python 3.8
+# 适用环境：Java 1.8 + Hadoop 3.1.3 + Spark 3.1.3 + PostgreSQL 14+ + Python 3.8
 # 作者：a1386
 # 日期：2024
 
@@ -20,7 +20,7 @@ check_env "scala" "Scala"
 check_env "hadoop" "Hadoop"
 check_env "spark-submit" "Spark"
 check_env "python3.8" "Python 3.8"
-check_env "mysql" "MySQL"
+check_env "psql" "PostgreSQL"
 check_env "mvn" "Maven"
 
 # 检查HDFS是否启动
@@ -29,9 +29,9 @@ if ! hdfs dfs -test -d /; then
     exit 1
 fi
 
-# 检查MySQL是否启动
-if ! systemctl is-active --quiet mysql; then
-    echo "错误：MySQL未启动，请执行 sudo systemctl start mysql"
+# 检查PostgreSQL是否启动
+if ! systemctl is-active --quiet postgresql; then
+    echo "错误：PostgreSQL未启动，请执行 sudo systemctl start postgresql"
     exit 1
 fi
 
@@ -44,17 +44,17 @@ HDFS_RAW_PATH="hdfs://node1:9000/user/a1386/movie_data/raw/"
 HDFS_PROCESSED_PATH="hdfs://node1:9000/user/a1386/movie_data/processed/"
 HDFS_FEATURE_PATH="hdfs://node1:9000/user/a1386/movie_data/features/"
 HDFS_MODEL_PATH="hdfs://node1:9000/user/a1386/movie_model/"
-MYSQL_DB="movie_db"
-MYSQL_USER="root"
-MYSQL_PASS="root123"
+PG_DB="movie_db"
+PG_USER="postgres"
+PG_PASS="postgres"
 PROJECT_DIR="/home/a1386/Desktop/BigData/movieRecommendSystemV1"
 JAR_PATH="$PROJECT_DIR/target/movie-recommendation-system-1.0.jar"
 PYTHON_SCRIPT="$PROJECT_DIR/code/python/movie_recommender.py"
-JDBC_JAR="$PROJECT_DIR/lib/mysql-connector-j-8.0.33.jar"
+JDBC_JAR="$PROJECT_DIR/lib/postgresql-42.6.0.jar"
 
 echo "本地CSV路径：$LOCAL_CSV_PATH"
 echo "HDFS原始数据路径：$HDFS_RAW_PATH"
-echo "MySQL数据库：$MYSQL_DB"
+echo "PostgreSQL数据库：$PG_DB"
 echo "项目目录：$PROJECT_DIR"
 
 # -------------------------- 数据准备 --------------------------
@@ -71,14 +71,13 @@ else
     echo "⚠️ HDFS原始数据已存在，跳过上传"
 fi
 
-# 初始化MySQL数据库
-echo "正在初始化MySQL数据库..."
-#mysql -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u$MYSQL_USER -p$MYSQL_PASS < $PROJECT_DIR/code/sql/movie_tables.sql
+# 初始化PostgreSQL数据库
+echo "正在初始化PostgreSQL数据库..."
+PGPASSWORD=$PG_PASS psql -U $PG_USER -f $PROJECT_DIR/code/sql/movie_tables.sql
 if [ $? -eq 0 ]; then
-    echo "✅ MySQL数据库初始化完成"
+    echo "✅ PostgreSQL数据库初始化完成"
 else
-    echo "错误：MySQL数据库初始化失败"
+    echo "错误：PostgreSQL数据库初始化失败"
     exit 1
 fi
 
@@ -105,7 +104,7 @@ spark-submit \
     $JAR_PATH
 
 if [ $? -eq 0 ]; then
-    echo "✅ 数据预处理完成（HDFS+MySQL）"
+    echo "✅ 数据预处理完成（HDFS+PostgreSQL）"
 else
     echo "错误：数据预处理失败"
     exit 1
@@ -151,7 +150,7 @@ echo -e "\n==================================== 部署完成 ===================
 echo "🎉 电影推荐系统一键部署运行成功！"
 echo -e "\n核心组件状态："
 echo "1. HDFS数据：已存储（原始/预处理/特征/模型）"
-echo "2. MySQL数据：movie_basic/movie_features/user_ratings/user_recommendations"
+echo "2. PostgreSQL数据：movie_basic/movie_features/user_ratings/user_recommendations"
 echo "3. 推荐模型：物品CF（相似推荐）+ ALS（个性化推荐）"
 echo "4. 推荐服务：Python脚本支持命令行调用"
 echo -e "\n常用命令："

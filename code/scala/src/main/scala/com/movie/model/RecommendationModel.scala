@@ -2,41 +2,43 @@ package com.movie.model
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types._ // 导入所有类型
+import org.apache.spark.sql.types._
 import org.apache.spark.ml.recommendation.ALS
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.linalg.Vectors
 import java.util.Base64
 
 /**
- * 基于 TMDB 数据集的推荐模型（修正版）
- * 适配 Spark 3.1.3 + Scala 2.12.10
+ * 基于 TMDB 数据集的推荐模型
+ * 适配 Spark 3.1.3 + Scala 2.12.10 + PostgreSQL
  */
 object RecommendationModel {
+  // PostgreSQL 连接配置
+  private val jdbcUrl = "jdbc:postgresql://localhost:5432/movie_db"
+  private val jdbcUser = "postgres"
+  private val jdbcPassword = "postgres"
+
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("TMDBMovieRecommendation")
       .master("local[*]")
       .config("spark.driver.memory", "4g")
       .config("spark.executor.memory", "8g")
-      .config("spark.jars", "/home/a1386/Desktop/BigData/movieRecommendSystemV1/lib/mysql-connector-j-8.0.33.jar")
       .getOrCreate()
 
-    import spark.implicits._ // 导入隐式转换
+    import spark.implicits._
 
     try {
-      // 加载数据
-      val movieFeatureDF = loadFromMySQL(
+      // 加载数据 - 使用 PostgreSQL
+      val movieFeatureDF = loadFromPostgreSQL(
         spark,
-        "SELECT m.movie_id, m.title, m.genres AS genres, m.release_date, f.tfidf_features " +
-        "FROM movie_basic m JOIN movie_features f ON m.movie_id = f.movie_id",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "SELECT m.movie_id, m.title, m.genres, m.release_date, f.tfidf_features " +
+        "FROM movie_basic m JOIN movie_features f ON m.movie_id = f.movie_id"
       )
 
-      val userRatingDF = loadFromMySQL(
+      val userRatingDF = loadFromPostgreSQL(
         spark,
-        "SELECT user_id, movie_id, rating FROM user_ratings",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "SELECT user_id, movie_id, rating FROM user_ratings"
       )
       // 修正 cast 语法：先获取列再 cast
       val ratingDF = userRatingDF
@@ -57,12 +59,11 @@ object RecommendationModel {
       alsModel.write.overwrite().save("hdfs://node1:9000/user/a1386/movie_model/als_tmdb")
       println("✅ ALS 模型已保存至 HDFS")
 
-      // 生成用户推荐
+      // 生成用户推荐并保存到 PostgreSQL
       val userRecsDF = generateUserRecommendations(alsModel, 10, movieFeatureDF, spark)
-      saveToMySQL(
+      saveToPostgreSQL(
         userRecsDF.select("user_id", "movie_id", "predicted_rating", "recommend_rank"),
-        "user_recommendations",
-        "jdbc:mysql://localhost:3306/movie_db?useSSL=false&serverTimezone=UTC"
+        "user_recommendations"
       )
 
       println("✅ 全量推荐模型训练完成")
@@ -76,12 +77,12 @@ object RecommendationModel {
     }
   }
 
-  /** 从 MySQL 加载数据 */
-  def loadFromMySQL(spark: SparkSession, sql: String, jdbcUrl: String): DataFrame = {
+  /** 从 PostgreSQL 加载数据 */
+  def loadFromPostgreSQL(spark: SparkSession, sql: String): DataFrame = {
     val jdbcProps = new java.util.Properties()
-    jdbcProps.setProperty("user", "root")
-    jdbcProps.setProperty("password", "root123")
-    jdbcProps.setProperty("driver", "com.mysql.cj.jdbc.Driver")
+    jdbcProps.setProperty("user", jdbcUser)
+    jdbcProps.setProperty("password", jdbcPassword)
+    jdbcProps.setProperty("driver", "org.postgresql.Driver")
 
     spark.read.jdbc(jdbcUrl, s"($sql) AS tmp_table", jdbcProps)
   }
@@ -211,16 +212,24 @@ def getSimilarMovies(movieId: Int, topN: Int, similarityDF: DataFrame, movieDF: 
       )
   }
 
-  /** 保存至 MySQL */
-  def saveToMySQL(df: DataFrame, tableName: String, jdbcUrl: String): Unit = {
+  /** 保存至 PostgreSQL */
+  def saveToPostgreSQL(df: DataFrame, tableName: String): Unit = {
     val jdbcProps = new java.util.Properties()
-    jdbcProps.setProperty("user", "root")
-    jdbcProps.setProperty("password", "root123")
-    jdbcProps.setProperty("driver", "com.mysql.cj.jdbc.Driver")
+    jdbcProps.setProperty("user", jdbcUser)
+    jdbcProps.setProperty("password", jdbcPassword)
+    jdbcProps.setProperty("driver", "org.postgresql.Driver")
+
+    // 先清空表再写入
+    try {
+      val conn = java.sql.DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)
+      val stmt = conn.createStatement()
+      try { stmt.execute(s"TRUNCATE TABLE $tableName CASCADE") } catch { case _: Exception => }
+      stmt.close(); conn.close()
+    } catch { case _: Exception => }
 
     df.write
-      .mode("overwrite")
+      .mode("append")
       .jdbc(jdbcUrl, tableName, jdbcProps)
-    println(s"✅ 推荐结果已保存至 MySQL 表: $tableName")
+    println(s"✅ 推荐结果已保存至 PostgreSQL 表: $tableName (${df.count()} rows)")
   }
 }
