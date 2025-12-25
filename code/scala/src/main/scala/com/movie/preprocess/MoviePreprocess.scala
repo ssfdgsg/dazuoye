@@ -28,9 +28,8 @@ object MoviePreprocess {
         spark,
         "hdfs://node1:9000/user/a1386/movie_data/raw/tmdb_5000_movies.csv"
       )
-      println(s"✅ 原始数据加载完成，共 ${rawDF.count()} 条记录")
 
-      // 数据探查（重点关注 overview 空值）
+      // 数据探查
       printDataProfiling(rawDF)
 
       // 数据清洗（新增文本空值处理）
@@ -129,23 +128,14 @@ object MoviePreprocess {
       .csv(path)
   }
 
-  /** 数据探查（重点输出 overview 空值统计） */
+  /** 数据探查（简化版，减少 action 次数） */
   def printDataProfiling(df: DataFrame): Unit = {
-    println("=== 数据缺失值统计 ===")
-    df.columns.foreach(colName => {
-      val missingCnt = df.filter(col(colName).isNull || col(colName) === "").count()
-      val missingRate = (missingCnt.toDouble / df.count()) * 100
-      println(f"$colName: $missingCnt 条缺失 (${missingRate}%.2f%%)")
-    })
-
-    // 单独强调 overview 空值（Tokenizer 输入字段）
+    val total = df.count()
+    println(s"=== 数据概览：共 $total 条记录 ===")
+    
+    // 只检查关键字段
     val overviewNullCnt = df.filter(col("overview").isNull || col("overview") === "").count()
-    println(s"\n⚠️ 关键提示：overview 字段空值/空字符串共 $overviewNullCnt 条，将在清洗阶段填充默认值")
-
-    println("\n=== 关键字段异常值统计 ===")
-    println(f"budget=0 的记录数：${df.filter(col("budget") === 0).count()}")
-    println(f"revenue=0 的记录数：${df.filter(col("revenue") === 0).count()}")
-    println(f"runtime 为空的记录数：${df.filter(col("runtime").isNull).count()}")
+    println(s"overview 空值：$overviewNullCnt 条")
   }
 
   /** 数据清洗（核心修改：新增文本字段空值处理） */
