@@ -45,12 +45,32 @@ object MoviePreprocess {
         "hdfs://node1:9000/user/a1386/movie_data/processed/tmdb_movies"
       )
 
+      // 保存到 movie_basic 表（只选择需要的列）
       saveToPostgreSQL(
-        featureDF,
+        featureDF.select(
+          col("movie_id"),
+          col("title"),
+          col("release_date"),
+          col("runtime"),
+          col("vote_average"),
+          col("vote_count"),
+          col("budget"),
+          col("budget_million"),
+          col("revenue"),
+          col("profit_ratio"),
+          col("popularity"),
+          col("popularity_score"),
+          col("genres"),
+          col("genre_diversity"),
+          col("keywords"),
+          col("production_companies"),
+          col("tfidf_features")
+        ),
         "movie_basic",
         "jdbc:postgresql://localhost:5432/movie_db"
       )
 
+      // 保存到 movie_features 表
       saveToPostgreSQL(
         featureDF.select("movie_id", "keywords", "keyword_count", "production_companies", "tfidf_features"),
         "movie_features",
