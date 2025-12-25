@@ -35,6 +35,7 @@ function Layout() {
 
           <nav className={`nav ${menuOpen ? 'open' : ''}`}>
             <Link to="/" className="nav-link" onClick={() => setMenuOpen(false)}>首页</Link>
+            <Link to="/browse" className="nav-link" onClick={() => setMenuOpen(false)}>分类</Link>
             <Link to="/rankings" className="nav-link" onClick={() => setMenuOpen(false)}>排行榜</Link>
           </nav>
 

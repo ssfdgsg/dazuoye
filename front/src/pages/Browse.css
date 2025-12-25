@@ -1,0 +1,93 @@
+.browse {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.browse-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.browse-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.browse-subtitle {
+  color: var(--text-gray);
+  font-size: 1.1rem;
+}
+
+.genre-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
+}
+
+.genre-tab {
+  padding: 10px 20px;
+  background: var(--bg-white);
+  border: 2px solid transparent;
+  border-radius: var(--radius-xl);
+  font-weight: 500;
+  color: var(--text-gray);
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.genre-tab:hover {
+  border-color: var(--primary-light);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.genre-tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.browse-content {
+  min-height: 400px;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 24px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--text-gray);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .browse-title {
+    font-size: 1.5rem;
+  }
+
+  .genre-tabs {
+    gap: 8px;
+  }
+
+  .genre-tab {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+}

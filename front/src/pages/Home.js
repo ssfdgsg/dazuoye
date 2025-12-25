@@ -1,34 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import MovieCard, { MovieCardSkeleton } from '../components/MovieCard';
-import { getMoviesByGenre, getRecommendations, getALSTask } from '../services/api';
+import { getRecommendations, getALSTask } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './Home.css';
 
-const GENRES = [
-  { key: 'all', label: '全部', icon: '🎬' },
-  { key: 'Action', label: '动作', icon: '💥' },
-  { key: 'Comedy', label: '喜剧', icon: '😂' },
-  { key: 'Drama', label: '剧情', icon: '🎭' },
-  { key: 'Romance', label: '爱情', icon: '💕' },
-  { key: 'Science Fiction', label: '科幻', icon: '🚀' },
-  { key: 'Horror', label: '恐怖', icon: '👻' },
-  { key: 'Animation', label: '动画', icon: '🎨' },
-];
-
 function Home() {
   const { user } = useAuth();
-  const [activeGenre, setActiveGenre] = useState('all');
-  const [genreMovies, setGenreMovies] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [loadingGenre, setLoadingGenre] = useState(true);
   const [loadingRecs, setLoadingRecs] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recMethod, setRecMethod] = useState('');
   const [alsTask, setAlsTask] = useState(null);
-
-  useEffect(() => {
-    loadGenreMovies(activeGenre);
-  }, [activeGenre]);
 
   useEffect(() => {
     loadRecommendations();
@@ -58,18 +40,6 @@ function Home() {
     interval = setInterval(checkTask, 3000);
     return () => clearInterval(interval);
   }, [user]);
-
-  const loadGenreMovies = async (genre) => {
-    setLoadingGenre(true);
-    try {
-      const data = await getMoviesByGenre(genre, 12);
-      setGenreMovies(data.movies || []);
-    } catch (err) {
-      console.error('Failed to load movies:', err);
-    } finally {
-      setLoadingGenre(false);
-    }
-  };
 
   const loadRecommendations = async (force = false) => {
     if (force) setRefreshing(true);
@@ -137,42 +107,6 @@ function Home() {
           <div className="empty-state">
             <div className="empty-state-icon">🎬</div>
             <p>暂无推荐，登录后获取个性化推荐</p>
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <h2 className="section-title">
-            <span className="section-title-icon">📂</span>
-            按类型浏览
-          </h2>
-        </div>
-        <div className="genre-tabs">
-          {GENRES.map((genre) => (
-            <button
-              key={genre.key}
-              className={`genre-tab ${activeGenre === genre.key ? 'active' : ''}`}
-              onClick={() => setActiveGenre(genre.key)}
-            >
-              {genre.icon} {genre.label}
-            </button>
-          ))}
-        </div>
-        {loadingGenre ? (
-          <div className="movie-grid">
-            {[...Array(6)].map((_, i) => <MovieCardSkeleton key={i} />)}
-          </div>
-        ) : genreMovies.length > 0 ? (
-          <div className="movie-grid">
-            {genreMovies.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-state-icon">📭</div>
-            <p>该类型暂无电影</p>
           </div>
         )}
       </section>

@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import MovieDetail from './pages/MovieDetail';
 import Rankings from './pages/Rankings';
+import Browse from './pages/Browse';
 import UserRatings from './pages/UserRatings';
 import Search from './pages/Search';
 
@@ -18,6 +19,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="movie/:id" element={<MovieDetail />} />
           <Route path="rankings" element={<Rankings />} />
+          <Route path="browse" element={<Browse />} />
           <Route path="search" element={<Search />} />
           <Route path="user/ratings" element={<UserRatings />} />
         </Route>
