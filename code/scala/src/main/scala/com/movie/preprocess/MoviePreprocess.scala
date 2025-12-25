@@ -7,7 +7,7 @@ import com.alibaba.fastjson.JSON
 import java.util.Base64
 
 /**
- * TMDB 电影数据集预处理类（修复文本空值问题）
+ * TMDB 电影数据集预处理类（PostgreSQL 版本）
  * 适配 Spark 3.1.3 + Scala 2.12.10
  */
 object MoviePreprocess {
@@ -45,7 +45,7 @@ object MoviePreprocess {
         "hdfs://node1:9000/user/a1386/movie_data/processed/tmdb_movies"
       )
 
-      // 保存到 movie_basic 表（只选择需要的列）
+      // 保存到 movie_basic 表（只选择需要的列，不包括 tfidf_features）
       saveToPostgreSQL(
         featureDF.select(
           col("movie_id"),
@@ -63,8 +63,7 @@ object MoviePreprocess {
           col("genres"),
           col("genre_diversity"),
           col("keywords"),
-          col("production_companies"),
-          col("tfidf_features")
+          col("production_companies")
         ),
         "movie_basic",
         "jdbc:postgresql://localhost:5432/movie_db"
@@ -85,7 +84,7 @@ object MoviePreprocess {
         "jdbc:postgresql://localhost:5432/movie_db"
       )
 
-      println("✅ 全量数据预处理完成（HDFS + MySQL）")
+      println("✅ 全量数据预处理完成（HDFS + PostgreSQL）")
 
     } catch {
       case e: Exception =>
@@ -208,19 +207,19 @@ object MoviePreprocess {
     })
 
     val profitRatioUDF = udf((budget: String, revenue: String) => {
-    	try {
-	        if (budget == null || revenue == null || 
-        	    budget == "No Data" || revenue == "No Data" || 
-        	    budget.trim.isEmpty || revenue.trim.isEmpty) {
-        	    0.0
-        	} else {
-        	    val budgetVal = budget.toDouble
-        	    val revenueVal = revenue.toDouble
-        	    if (budgetVal == 0) 0.0 else revenueVal / budgetVal
-        	}
-    	} catch {
-   	     case _: Exception => 0.0  // 捕获所有转换异常
-	}
+      try {
+        if (budget == null || revenue == null || 
+            budget == "No Data" || revenue == "No Data" || 
+            budget.trim.isEmpty || revenue.trim.isEmpty) {
+          0.0
+        } else {
+          val budgetVal = budget.toDouble
+          val revenueVal = revenue.toDouble
+          if (budgetVal == 0) 0.0 else revenueVal / budgetVal
+        }
+      } catch {
+        case _: Exception => 0.0  // 捕获所有转换异常
+      }
     })
 
     val popularityScoreUDF = udf((popularity: Double, voteCount: Int) => {
@@ -292,7 +291,7 @@ object MoviePreprocess {
   }
 
   /** 生成模拟评分 - 安全版本 */
-def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount: Int = 500): DataFrame = {
+  def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount: Int = 500): DataFrame = {
     import spark.implicits._
 
     try {
@@ -347,7 +346,7 @@ def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount:
         println(s"❌ 生成模拟评分失败: ${e.getMessage}")
         Seq.empty[(Int, Int, Double)].toDF("user_id", "movie_id", "rating")
     }
-}
+  }
 
   /** 保存至 HDFS */
   def saveToHDFS(df: DataFrame, path: String): Unit = {
@@ -366,7 +365,7 @@ def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount:
     jdbcProps.setProperty("driver", "org.postgresql.Driver")
 
     try {
-      // 先清空表（使用 TRUNCATE 避免外键约束问题）
+      // 先清空表（使用 TRUNCATE CASCADE 避免外键约束问题）
       val conn = java.sql.DriverManager.getConnection(jdbcUrl, "postgres", "postgres")
       val stmt = conn.createStatement()
       try {
