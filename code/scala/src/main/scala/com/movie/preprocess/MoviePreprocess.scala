@@ -346,8 +346,22 @@ def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount:
     jdbcProps.setProperty("driver", "org.postgresql.Driver")
 
     try {
+      // 先清空表（使用 TRUNCATE 避免外键约束问题）
+      val conn = java.sql.DriverManager.getConnection(jdbcUrl, "postgres", "postgres")
+      val stmt = conn.createStatement()
+      try {
+        stmt.execute(s"TRUNCATE TABLE $tableName CASCADE")
+        println(s"✅ 已清空表: $tableName")
+      } catch {
+        case _: Exception => // 表可能不存在，忽略
+      } finally {
+        stmt.close()
+        conn.close()
+      }
+      
+      // 使用 append 模式写入
       df.write
-        .mode("overwrite")
+        .mode("append")
         .jdbc(jdbcUrl, tableName, jdbcProps)
       println(s"✅ 数据已同步至 PostgreSQL 表: $tableName")
     } catch {
