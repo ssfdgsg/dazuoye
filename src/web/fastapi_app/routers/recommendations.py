@@ -56,8 +56,9 @@ async def user_recommend_cf(user_id: int, topN: int = Query(10, ge=1, le=50)):
     import json
     import os
     
+    # 从 src/web/fastapi_app/routers/ 往上4层到项目根目录
     script_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "code", "python", "movie_recommender.py")
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "code", "python", "movie_recommender.py")
     )
     cmd = ["python3", script_path, "--user_cf", str(user_id), "--topN", str(topN)]
     
