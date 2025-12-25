@@ -217,10 +217,12 @@ def recommend_by_genre(db_conn, genre, topN):
     movies = cursor.fetchall()
     if not movies:
         return {"error": f"没有找到类别为 '{genre}' 的电影"}
-    # 处理日期类型，转为字符串，避免 JSON 序列化报错
+    # 处理日期和 Decimal 类型，避免 JSON 序列化报错
     for m in movies:
         if "release_date" in m and m["release_date"] is not None:
             m["release_date"] = str(m["release_date"])
+        if "vote_average" in m and m["vote_average"] is not None:
+            m["vote_average"] = float(m["vote_average"])
     return {"genre": genre, "recommendations": movies}
 
 # 基于电影ID推荐相似电影
