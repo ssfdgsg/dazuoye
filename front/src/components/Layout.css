@@ -26,9 +26,23 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 32px;
-  gap: 32px;
+  gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* 左侧区域：Logo + 导航 */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+/* 右侧区域：搜索 + 登录 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 /* Logo 样式升级 */
@@ -105,8 +119,7 @@
 /* 搜索框升级 */
 .search-form {
   display: flex;
-  flex: 1;
-  max-width: 380px;
+  width: 280px;
   background: linear-gradient(135deg, rgba(250, 237, 205, 0.8) 0%, rgba(247, 197, 159, 0.4) 100%);
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -377,16 +390,22 @@
     padding: 8px 14px;
     font-size: 0.9rem;
   }
-  
-  .search-form {
-    max-width: 280px;
-  }
 }
 
 @media (max-width: 768px) {
   .header-content {
     flex-wrap: wrap;
     padding: 12px 16px;
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-right {
+    order: 3;
+    width: 100%;
+    margin-top: 12px;
   }
 
   .nav {
@@ -429,10 +448,8 @@
   }
 
   .search-form {
-    order: 3;
-    flex: 0 0 100%;
-    max-width: none;
-    margin-top: 12px;
+    flex: 1;
+    width: auto;
   }
 
   .menu-toggle {
