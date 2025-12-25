@@ -177,8 +177,9 @@ object MoviePreprocess {
       .withColumn("runtime", when(col("runtime").isNull, 
         expr("percentile_approx(runtime, 0.5) OVER (PARTITION BY genre_names)")
       ).cast(IntegerType))
-      .withColumn("budget", when(col("budget") === 0, "No Data").otherwise(col("budget").cast(StringType)))
-      .withColumn("revenue", when(col("revenue") === 0, "No Data").otherwise(col("revenue").cast(StringType)))
+      // budget 和 revenue 保持为数值类型，0 表示无数据
+      .withColumn("budget", col("budget").cast(LongType))
+      .withColumn("revenue", col("revenue").cast(LongType))
   }
 
   /** 特征工程（新增 overview 空值二次校验） */
@@ -196,19 +197,15 @@ object MoviePreprocess {
       if (keywords == "Unknown") 0 else keywords.split(",").length
     })
 
-    val profitRatioUDF = udf((budget: String, revenue: String) => {
+    val profitRatioUDF = udf((budget: java.lang.Long, revenue: java.lang.Long) => {
       try {
-        if (budget == null || revenue == null || 
-            budget == "No Data" || revenue == "No Data" || 
-            budget.trim.isEmpty || revenue.trim.isEmpty) {
+        if (budget == null || revenue == null || budget == 0L) {
           0.0
         } else {
-          val budgetVal = budget.toDouble
-          val revenueVal = revenue.toDouble
-          if (budgetVal == 0) 0.0 else revenueVal / budgetVal
+          revenue.toDouble / budget.toDouble
         }
       } catch {
-        case _: Exception => 0.0  // 捕获所有转换异常
+        case _: Exception => 0.0
       }
     })
 
@@ -248,7 +245,7 @@ object MoviePreprocess {
       .withColumn("profit_ratio", profitRatioUDF(col("budget"), col("revenue")))
       .withColumn("popularity_score", popularityScoreUDF(col("popularity"), col("vote_count")))
       .withColumn("budget_million", when(
-        col("budget") =!= "No Data",
+        col("budget") > 0,
         col("budget").cast(DoubleType) / 1000000
       ).cast(DecimalType(10, 2)))
       .withColumn("tfidf_features", udf((vec: org.apache.spark.ml.linalg.Vector) => {
