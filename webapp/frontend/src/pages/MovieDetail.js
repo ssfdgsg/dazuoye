@@ -20,6 +20,7 @@ function MovieDetail() {
   const [aiReview, setAiReview] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     loadMovie();
@@ -113,13 +114,17 @@ function MovieDetail() {
 
   const posterUrl = movie.poster?.startsWith('http')
     ? movie.poster
-    : `/${movie.poster || 'static/img/default.webp'}`;
+    : movie.poster ? `/${movie.poster}` : null;
 
   return (
     <div className="movie-detail container fade-in">
       <div className="detail-card">
         <div className="detail-poster">
-          <img src={posterUrl} alt={movie.title} onError={(e) => { e.target.src = '/static/img/default.webp'; }} />
+          {posterUrl && !imgError ? (
+            <img src={posterUrl} alt={movie.title} onError={() => setImgError(true)} />
+          ) : (
+            <div className="detail-placeholder"><span>🎬</span></div>
+          )}
         </div>
         <div className="detail-content">
           <h1 className="detail-title">{movie.title}</h1>

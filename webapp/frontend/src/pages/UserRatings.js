@@ -4,6 +4,23 @@ import { useAuth } from '../context/AuthContext';
 import { getUserRatings } from '../services/api';
 import './UserRatings.css';
 
+function RatingPoster({ item }) {
+  const [imgError, setImgError] = useState(false);
+  const posterUrl = item.poster?.startsWith('http')
+    ? item.poster
+    : item.poster ? `/${item.poster}` : null;
+
+  return (
+    <div className="rating-poster">
+      {posterUrl && !imgError ? (
+        <img src={posterUrl} alt={item.title} onError={() => setImgError(true)} />
+      ) : (
+        <div className="rating-placeholder"><span>🎬</span></div>
+      )}
+    </div>
+  );
+}
+
 function UserRatings() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -64,18 +81,13 @@ function UserRatings() {
       {ratings.length > 0 ? (
         <div className="ratings-list">
           {ratings.map((item) => {
-            const posterUrl = item.poster?.startsWith('http')
-              ? item.poster
-              : `/${item.poster || 'static/img/default.webp'}`;
             return (
               <div
                 key={item.movie_id}
                 className="rating-item"
                 onClick={() => handleMovieClick(item.movie_id)}
               >
-                <div className="rating-poster">
-                  <img src={posterUrl} alt={item.title} onError={(e) => { e.target.src = '/static/img/default.webp'; }} />
-                </div>
+                <RatingPoster item={item} />
                 <div className="rating-info">
                   <h3 className="rating-movie-title">{item.title}</h3>
                   <div className="rating-meta">

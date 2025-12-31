@@ -22,6 +22,23 @@ const GENRE_OPTIONS = [
   { key: 'Animation', label: '动画' },
 ];
 
+function RankingPoster({ movie }) {
+  const [imgError, setImgError] = useState(false);
+  const posterUrl = movie.poster?.startsWith('http')
+    ? movie.poster
+    : movie.poster ? `/${movie.poster}` : null;
+
+  return (
+    <div className="ranking-poster">
+      {posterUrl && !imgError ? (
+        <img src={posterUrl} alt={movie.title} onError={() => setImgError(true)} />
+      ) : (
+        <div className="ranking-placeholder"><span>🎬</span></div>
+      )}
+    </div>
+  );
+}
+
 function Rankings() {
   const navigate = useNavigate();
   const [rankType, setRankType] = useState('rating');
@@ -133,9 +150,6 @@ function Rankings() {
 
       <div className="rankings-list">
         {movies.map((movie, index) => {
-          const posterUrl = movie.poster?.startsWith('http')
-            ? movie.poster
-            : `/${movie.poster || 'static/img/default.webp'}`;
           return (
             <div
               key={movie.id}
@@ -145,9 +159,7 @@ function Rankings() {
               <div className={`rank-badge ${index < 3 ? `top-${index + 1}` : ''}`}>
                 {movie.rank || index + 1}
               </div>
-              <div className="ranking-poster">
-                <img src={posterUrl} alt={movie.title} onError={(e) => { e.target.src = '/static/img/default.webp'; }} />
-              </div>
+              <RankingPoster movie={movie} />
               <div className="ranking-info">
                 <h3 className="ranking-movie-title">{movie.title}</h3>
                 <div className="ranking-meta">

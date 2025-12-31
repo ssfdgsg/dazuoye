@@ -208,3 +208,19 @@
     padding: 6px 12px;
   }
 }
+
+
+/* 占位符样式 */
+.rating-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-placeholder span {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}

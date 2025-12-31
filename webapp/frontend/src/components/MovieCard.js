@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MovieCard.css';
 
 function MovieCard({ movie, showSimilarity = false }) {
   const navigate = useNavigate();
+  const [imgError, setImgError] = useState(false);
 
   const handleClick = () => {
     navigate(`/movie/${movie.id}`);
@@ -11,16 +12,22 @@ function MovieCard({ movie, showSimilarity = false }) {
 
   const posterUrl = movie.poster?.startsWith('http')
     ? movie.poster
-    : `/${movie.poster || 'static/img/default.webp'}`;
+    : movie.poster ? `/${movie.poster}` : null;
 
   return (
     <div className="movie-card" onClick={handleClick}>
       <div className="movie-card-poster">
-        <img
-          src={posterUrl}
-          alt={movie.title}
-          onError={(e) => { e.target.src = '/static/img/default.webp'; }}
-        />
+        {posterUrl && !imgError ? (
+          <img
+            src={posterUrl}
+            alt={movie.title}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="movie-card-placeholder">
+            <span>🎬</span>
+          </div>
+        )}
         {movie.rating && (
           <span className="movie-card-rating">
             ⭐ {movie.rating.toFixed(1)}

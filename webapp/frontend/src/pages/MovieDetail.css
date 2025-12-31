@@ -396,3 +396,20 @@
     gap: 16px;
   }
 }
+
+
+/* 占位符样式 */
+.detail-placeholder {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+.detail-placeholder span {
+  font-size: 4rem;
+  opacity: 0.5;
+}

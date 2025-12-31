@@ -357,3 +357,31 @@
     font-size: 0.9rem;
   }
 }
+
+
+/* 占位符样式 */
+.compare-placeholder {
+  width: 140px;
+  height: 200px;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+
+.compare-placeholder span {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.search-item .compare-placeholder {
+  width: 45px;
+  height: 65px;
+  margin-bottom: 0;
+}
+
+.search-item .compare-placeholder span {
+  font-size: 1.2rem;
+}

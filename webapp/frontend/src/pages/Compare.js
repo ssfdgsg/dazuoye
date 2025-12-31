@@ -3,6 +3,19 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getMovie, searchMovies } from '../services/api';
 import './Compare.css';
 
+function ComparePoster({ movie }) {
+  const [imgError, setImgError] = useState(false);
+  const posterUrl = movie?.poster?.startsWith('http')
+    ? movie.poster
+    : movie?.poster ? `/${movie.poster}` : null;
+
+  return posterUrl && !imgError ? (
+    <img src={posterUrl} alt={movie.title} onError={() => setImgError(true)} />
+  ) : (
+    <div className="compare-placeholder"><span>🎬</span></div>
+  );
+}
+
 function Compare() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -90,9 +103,6 @@ function Compare() {
   };
 
   const validMovies = movies.filter(Boolean);
-  const getPosterUrl = (movie) => movie?.poster?.startsWith('http') 
-    ? movie.poster 
-    : `/${movie?.poster || 'static/img/default.webp'}`;
 
   // 对比数据项
   const compareItems = [
@@ -139,8 +149,7 @@ function Compare() {
             ) : movies[slot] ? (
               <div className="slot-movie">
                 <button className="remove-btn" onClick={() => removeMovie(slot)}>✕</button>
-                <img src={getPosterUrl(movies[slot])} alt={movies[slot].title} 
-                  onError={(e) => { e.target.src = '/static/img/default.webp'; }} />
+                <ComparePoster movie={movies[slot]} />
                 <h3>{movies[slot].title}</h3>
                 <div className="slot-genres">
                   {movies[slot].genres?.slice(0, 2).map((g, i) => (
@@ -178,8 +187,7 @@ function Compare() {
             ) : searchResults.length > 0 ? (
               searchResults.map((movie) => (
                 <div key={movie.id} className="search-item" onClick={() => selectMovie(movie)}>
-                  <img src={getPosterUrl(movie)} alt={movie.title}
-                    onError={(e) => { e.target.src = '/static/img/default.webp'; }} />
+                  <ComparePoster movie={movie} />
                   <div className="search-item-info">
                     <span className="search-item-title">{movie.title}</span>
                     <span className="search-item-year">

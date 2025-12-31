@@ -315,3 +315,19 @@
     font-size: 1rem;
   }
 }
+
+
+/* 占位符样式 */
+.ranking-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ranking-placeholder span {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}

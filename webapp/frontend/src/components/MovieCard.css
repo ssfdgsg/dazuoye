@@ -116,3 +116,19 @@
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+
+/* 占位符样式 */
+.movie-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movie-card-placeholder span {
+  font-size: 3rem;
+  opacity: 0.5;
+}
