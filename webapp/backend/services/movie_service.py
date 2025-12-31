@@ -43,7 +43,7 @@ def get_movie_detail(movie_id: int) -> Optional[dict]:
         "popularity": float(movie["popularity_score"]) if movie["popularity_score"] else 0.0,
         "budget": float(movie["budget_million"]) if movie["budget_million"] else 0.0,
         "revenue": movie["revenue"] or "0",
-        "overview": f"{movie['title']} 是一�?{movie['genres']} 类型的电影�? if movie["genres"] else "暂无简�?,
+        "overview": f"{movie['title']} - {movie['genres']}" if movie["genres"] else "No overview",
         "keywords": [k.strip() for k in keywords_str.split(",") if k.strip()],
         "production_companies": [c.strip() for c in companies_str.split(",") if c.strip()],
         "language": "en",
@@ -86,7 +86,7 @@ def search_movies(query: str, limit: int = 20) -> list:
 
 
 def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_to: str = "", limit: int = 50) -> list:
-    """获取排行�?""
+    """获取排行榜"""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -96,7 +96,6 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
     """
     params = []
     
-    # 类型筛�?
     if genre != "all":
         genre_map = {
             "action": "Action", "comedy": "Comedy", "drama": "Drama",
@@ -106,7 +105,6 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
         sql += " AND genres ILIKE %s"
         params.append(f"%{db_genre}%")
     
-    # 年份筛�?
     if year_from:
         sql += " AND EXTRACT(YEAR FROM release_date) >= %s"
         params.append(int(year_from))
@@ -114,7 +112,6 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
         sql += " AND EXTRACT(YEAR FROM release_date) <= %s"
         params.append(int(year_to))
     
-    # 排序
     if rank_type == "rating":
         sql += " AND vote_count >= 100 AND vote_average > 0 ORDER BY vote_average DESC, vote_count DESC"
     elif rank_type == "popularity":
@@ -153,7 +150,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
 
 
 def get_all_genres() -> list:
-    """获取所有电影类�?""
+    """获取所有电影类型"""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -173,7 +170,7 @@ def get_all_genres() -> list:
 
 
 def get_movies_by_genre(genre: str = "all", limit: int = 12) -> list:
-    """按类型获取电�?""
+    """按类型获取电影"""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
