@@ -162,6 +162,7 @@ object MoviePreprocess {
     val validMovies = movieDF.select(col("movie_id").cast(IntegerType), col("genres"))
       .filter(col("movie_id").isNotNull).collect()
       .flatMap(row => try { Some((row.getInt(0), row.getString(1))) } catch { case _: Exception => None })
+      .groupBy(_._1).map(_._2.head).toArray  // Deduplicate by movie_id
 
     if (validMovies.isEmpty) return Seq.empty[(Int, Int, Double)].toDF("user_id", "movie_id", "rating")
 
