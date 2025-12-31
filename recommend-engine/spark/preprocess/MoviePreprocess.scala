@@ -170,8 +170,9 @@ object MoviePreprocess {
         case 0 => "Action,Adventure"; case 1 => "Animation,Family"; case 2 => "Drama,Romance"
         case 3 => "Comedy,Crime"; case 4 => "Science Fiction,Fantasy"
       }
-      (1 to (scala.util.Random.nextInt(11) + 10)).map { _ =>
-        val (movieId, movieGenre) = validMovies(scala.util.Random.nextInt(validMovies.length))
+      val numRatings = scala.util.Random.nextInt(11) + 10
+      val shuffledMovies = scala.util.Random.shuffle(validMovies.toSeq).take(numRatings)
+      shuffledMovies.map { case (movieId, movieGenre) =>
         val baseRating = scala.util.Random.nextDouble() * 4 + 1
         val rating = if (movieGenre != null && userPref.split(",").exists(movieGenre.contains)) math.min(baseRating + 1, 5.0) else baseRating
         (userId, movieId, BigDecimal(rating).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble)
