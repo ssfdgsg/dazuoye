@@ -41,9 +41,9 @@ COMMENT ON COLUMN movie_basic.genres IS '电影类型（逗号分隔）';
 CREATE TABLE IF NOT EXISTS movie_features (
     movie_id INT PRIMARY KEY REFERENCES movie_basic(movie_id),
     overview TEXT,
-    keywords VARCHAR(512),
+    keywords TEXT,
     keyword_count INT,
-    production_companies VARCHAR(512),
+    production_companies TEXT,
     original_language VARCHAR(50),
     spoken_languages VARCHAR(255),
     tfidf_features TEXT
