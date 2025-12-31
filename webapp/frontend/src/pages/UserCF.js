@@ -42,7 +42,7 @@ function UserCF() {
           title: r.title,
           genres: r.genre?.split(',') || [],
           rating: r.vote_average || 0,
-          poster: `img/${r.movie_id}.webp`,
+          poster: r.poster || `/static/img/${r.movie_id}.webp`,
           prediction: r.predict_rating,
         }));
         setRecommendations(movies);
