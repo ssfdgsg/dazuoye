@@ -43,11 +43,11 @@ def get_movie_detail(movie_id: int) -> Optional[dict]:
         "popularity": float(movie["popularity_score"]) if movie["popularity_score"] else 0.0,
         "budget": float(movie["budget_million"]) if movie["budget_million"] else 0.0,
         "revenue": movie["revenue"] or "0",
-        "overview": f"{movie['title']} 是一部 {movie['genres']} 类型的电影。" if movie["genres"] else "暂无简介",
+        "overview": f"{movie['title']} 是一�?{movie['genres']} 类型的电影�? if movie["genres"] else "暂无简�?,
         "keywords": [k.strip() for k in keywords_str.split(",") if k.strip()],
         "production_companies": [c.strip() for c in companies_str.split(",") if c.strip()],
         "language": "en",
-        "poster": f"img/{movie['movie_id']}.webp",
+        "poster": f"static/img/{movie['movie_id']}.webp",
     }
 
 
@@ -79,14 +79,14 @@ def search_movies(query: str, limit: int = 20) -> list:
             "rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
             "vote_count": m["vote_count"],
             "popularity": float(m["popularity_score"]) if m["popularity_score"] else 0.0,
-            "poster": f"img/{m['movie_id']}.webp",
+            "poster": f"static/img/{m['movie_id']}.webp",
         }
         for m in movies
     ]
 
 
 def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_to: str = "", limit: int = 50) -> list:
-    """获取排行榜"""
+    """获取排行�?""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -96,7 +96,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
     """
     params = []
     
-    # 类型筛选
+    # 类型筛�?
     if genre != "all":
         genre_map = {
             "action": "Action", "comedy": "Comedy", "drama": "Drama",
@@ -106,7 +106,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
         sql += " AND genres ILIKE %s"
         params.append(f"%{db_genre}%")
     
-    # 年份筛选
+    # 年份筛�?
     if year_from:
         sql += " AND EXTRACT(YEAR FROM release_date) >= %s"
         params.append(int(year_from))
@@ -146,14 +146,14 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
             "vote_count": m["vote_count"],
             "popularity": float(m["popularity_score"]) if m["popularity_score"] else 0.0,
             "revenue": m["revenue"] or "0",
-            "poster": f"img/{m['movie_id']}.webp",
+            "poster": f"static/img/{m['movie_id']}.webp",
         }
         for idx, m in enumerate(movies, 1)
     ]
 
 
 def get_all_genres() -> list:
-    """获取所有电影类型"""
+    """获取所有电影类�?""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -173,7 +173,7 @@ def get_all_genres() -> list:
 
 
 def get_movies_by_genre(genre: str = "all", limit: int = 12) -> list:
-    """按类型获取电影"""
+    """按类型获取电�?""
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -204,7 +204,7 @@ def get_movies_by_genre(genre: str = "all", limit: int = 12) -> list:
             "title": m["title"],
             "genre": m["genres"].split(",") if m["genres"] else [],
             "rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
-            "poster": f"img/{m['movie_id']}.webp",
+            "poster": f"static/img/{m['movie_id']}.webp",
         }
         for m in movies[:limit]
     ]

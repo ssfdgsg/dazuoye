@@ -61,7 +61,7 @@ def get_similar_movies(movie_id: int, limit: int = 12) -> Optional[list]:
             "rating": float(row["vote_average"]) if row["vote_average"] else 0.0,
             "vote_count": row["vote_count"],
             "similarity": round(sim, 4),
-            "poster": f"img/{row['movie_id']}.webp",
+            "poster": f"static/img/{row['movie_id']}.webp",
         })
     
     results.sort(key=lambda x: x["similarity"], reverse=True)
@@ -157,7 +157,7 @@ def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, for
                                 "title": r.get("title"),
                                 "genre": r.get("genre", "").split("|") if r.get("genre") else [],
                                 "rating": float(r.get("vote_average")) if r.get("vote_average") else 0.0,
-                                "poster": f"/img/{r.get('movie_id')}.webp",
+                                "poster": f"/static/img/{r.get('movie_id')}.webp",
                                 "prediction": float(r.get("predict_rating")) if r.get("predict_rating") else 0.0,
                             }
                             for r in recs
@@ -189,7 +189,7 @@ def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, for
                         "title": r["title"],
                         "genre": r["genres"].split("|") if r["genres"] else [],
                         "rating": float(r["vote_average"]) if r["vote_average"] else 0.0,
-                        "poster": f"/img/{r['movie_id']}.webp",
+                        "poster": f"/static/img/{r['movie_id']}.webp",
                         "prediction": float(r["prediction"]) if r["prediction"] else 0.0,
                         "release_date": r["release_date"].year if r["release_date"] else None,
                     }
@@ -230,7 +230,7 @@ def get_personalized_recommendations(user_id: Optional[int], topN: int = 10, for
                 "title": m["title"],
                 "genre": m["genres"].split(",") if m["genres"] else [],
                 "rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
-                "poster": f"img/{m['movie_id']}.webp",
+                "poster": f"static/img/{m['movie_id']}.webp",
             }
             for m in movies[:topN]
         ],

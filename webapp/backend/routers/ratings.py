@@ -94,7 +94,7 @@ async def user_ratings(user_id: int):
                 "genres": r["genres"].split("|") if r["genres"] else [],
                 "vote_average": float(r["vote_average"]) if r["vote_average"] else 0,
                 "popularity": float(r["popularity_score"]) if r["popularity_score"] else 0,
-                "poster": f"/img/{r['movie_id']}.webp",
+                "poster": f"/static/img/{r['movie_id']}.webp",
             }
             for r in ratings
         ],
