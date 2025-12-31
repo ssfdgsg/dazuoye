@@ -1,0 +1,90 @@
+.browse {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 筛选栏 */
+.filter-bar {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 2;
+}
+
+.filter-label {
+  color: #666;
+  font-size: 14px;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.filter-item {
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.filter-item:hover {
+  color: #ff6b00;
+}
+
+.filter-item.active {
+  color: #ff6b00;
+  font-weight: 500;
+}
+
+/* 内容区域 */
+.browse-content {
+  min-height: 400px;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: #999;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    padding: 12px 16px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-options {
+    gap: 4px 12px;
+  }
+
+  .filter-item {
+    font-size: 13px;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+}
