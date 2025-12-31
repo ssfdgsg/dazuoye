@@ -52,40 +52,33 @@ async def user_recommend(user_id: int, topN: int = Query(10, ge=1, le=50)):
 @router.get("/user/{user_id}/recommend-cf")
 async def user_recommend_cf(user_id: int, topN: int = Query(10, ge=1, le=50)):
     """获取 User-CF 协同过滤推荐"""
-    import subprocess
-    import json
+    import sys
     import os
     
-    # 从 src/web/fastapi_app/routers/ 往上4层到项目根目录
-    script_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "code", "python", "movie_recommender.py")
-    )
-    cmd = ["python3", script_path, "--user_cf", str(user_id), "--topN", str(topN)]
+    # 添加 recommend-engine 到路径
+    engine_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "recommend-engine"))
+    if engine_path not in sys.path:
+        sys.path.insert(0, engine_path)
     
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        output = proc.stdout.strip() if proc.stdout else ""
+        from algorithms.user_cf import UserCFRecommender
+        from algorithms.db import DatabaseManager
+        from config import get_settings
         
-        if proc.returncode == 0 and output:
-            try:
-                data = json.loads(output)
-                # 如果返回了 error 字段，也正常返回让前端处理
-                return data
-            except json.JSONDecodeError:
-                # 尝试提取最后一行 JSON
-                lines = output.split('\n')
-                for line in reversed(lines):
-                    try:
-                        data = json.loads(line)
-                        return data
-                    except:
-                        continue
-                return {"user_id": user_id, "recommendations": [], "error": "推荐结果解析失败"}
-        else:
-            error_msg = proc.stderr[:200] if proc.stderr else "脚本执行失败"
-            return {"user_id": user_id, "recommendations": [], "error": error_msg}
-    except subprocess.TimeoutExpired:
-        return {"user_id": user_id, "recommendations": [], "error": "推荐计算超时"}
+        settings = get_settings()
+        db = DatabaseManager(
+            host=settings.db_host,
+            port=settings.db_port,
+            user=settings.db_user,
+            password=settings.db_pass,
+            dbname=settings.db_name
+        )
+        
+        recommender = UserCFRecommender(db)
+        result = recommender.recommend(user_id, top_n=topN)
+        db.close()
+        
+        return result
     except Exception as e:
         return {"user_id": user_id, "recommendations": [], "error": str(e)}
 
