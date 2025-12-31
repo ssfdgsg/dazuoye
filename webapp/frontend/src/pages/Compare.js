@@ -5,7 +5,7 @@ import './Compare.css';
 
 function ComparePoster({ movie }) {
   const [imgError, setImgError] = useState(false);
-  const posterUrl = movie?.poster?.startsWith('http')
+  const posterUrl = movie?.poster?.startsWith('http') || movie?.poster?.startsWith('/')
     ? movie.poster
     : movie?.poster ? `/${movie.poster}` : null;
 

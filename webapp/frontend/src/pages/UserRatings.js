@@ -6,7 +6,7 @@ import './UserRatings.css';
 
 function RatingPoster({ item }) {
   const [imgError, setImgError] = useState(false);
-  const posterUrl = item.poster?.startsWith('http')
+  const posterUrl = item.poster?.startsWith('http') || item.poster?.startsWith('/')
     ? item.poster
     : item.poster ? `/${item.poster}` : null;
 

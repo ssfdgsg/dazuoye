@@ -10,7 +10,7 @@ function MovieCard({ movie, showSimilarity = false }) {
     navigate(`/movie/${movie.id}`);
   };
 
-  const posterUrl = movie.poster?.startsWith('http')
+  const posterUrl = movie.poster?.startsWith('http') || movie.poster?.startsWith('/')
     ? movie.poster
     : movie.poster ? `/${movie.poster}` : null;
 
