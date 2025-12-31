@@ -70,7 +70,8 @@ class UserCFRecommender:
                     "genre": m["genres"],
                     "release_date": str(m["release_date"]) if m["release_date"] else "未知",
                     "vote_average": float(m["vote_average"]) if m["vote_average"] else 0.0,
-                    "predict_rating": round(pred['pred_rating'], 2)
+                    "predict_rating": round(pred['pred_rating'], 2),
+                    "poster": f"/static/img/{mid}.webp"
                 })
         
         return {
@@ -182,7 +183,8 @@ class UserCFRecommender:
                 "genre": m["genres"],
                 "release_date": str(m["release_date"]) if m["release_date"] else "未知",
                 "vote_average": float(m["vote_average"]) if m["vote_average"] else 0.0,
-                "predict_rating": float(m["vote_average"]) if m["vote_average"] else 0.0
+                "predict_rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
+                "poster": f"/static/img/{m['movie_id']}.webp"
             } for m in cursor.fetchall()]
             
             return {
