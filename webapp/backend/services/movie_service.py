@@ -47,7 +47,7 @@ def get_movie_detail(movie_id: int) -> Optional[dict]:
         "keywords": [k.strip() for k in keywords_str.split(",") if k.strip()],
         "production_companies": [c.strip() for c in companies_str.split(",") if c.strip()],
         "language": "en",
-        "poster": f"static/img/{movie['movie_id']}.webp",
+        "poster": f"/static/img/{movie['movie_id']}.webp",
     }
 
 
@@ -79,7 +79,7 @@ def search_movies(query: str, limit: int = 20) -> list:
             "rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
             "vote_count": m["vote_count"],
             "popularity": float(m["popularity_score"]) if m["popularity_score"] else 0.0,
-            "poster": f"static/img/{m['movie_id']}.webp",
+            "poster": f"/static/img/{m['movie_id']}.webp",
         }
         for m in movies
     ]
@@ -143,7 +143,7 @@ def get_rankings(rank_type: str, genre: str = "all", year_from: str = "", year_t
             "vote_count": m["vote_count"],
             "popularity": float(m["popularity_score"]) if m["popularity_score"] else 0.0,
             "revenue": m["revenue"] or "0",
-            "poster": f"static/img/{m['movie_id']}.webp",
+            "poster": f"/static/img/{m['movie_id']}.webp",
         }
         for idx, m in enumerate(movies, 1)
     ]
@@ -201,7 +201,7 @@ def get_movies_by_genre(genre: str = "all", limit: int = 12) -> list:
             "title": m["title"],
             "genre": m["genres"].split(",") if m["genres"] else [],
             "rating": float(m["vote_average"]) if m["vote_average"] else 0.0,
-            "poster": f"static/img/{m['movie_id']}.webp",
+            "poster": f"/static/img/{m['movie_id']}.webp",
         }
         for m in movies[:limit]
     ]
