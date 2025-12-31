@@ -48,14 +48,6 @@ app.include_router(ratings.router)
 static_path = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_path):
     app.mount("/static", StaticFiles(directory=static_path), name="static")
-    
-    @app.get("/")
-    async def index():
-        return FileResponse(os.path.join(static_path, "index.html"))
-    
-    @app.get("/img/{filename:path}")
-    async def serve_image(filename: str):
-        return FileResponse(os.path.join(static_path, "img", filename))
 
 
 @app.get("/health")

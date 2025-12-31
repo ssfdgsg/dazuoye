@@ -159,28 +159,43 @@ object MoviePreprocess {
 
   def generateSimulatedRatings(spark: SparkSession, movieDF: DataFrame, userCount: Int = 500): DataFrame = {
     import spark.implicits._
-    val validMovies = movieDF.select(col("movie_id").cast(IntegerType), col("genres"))
+    
+    val movieList = movieDF.select(col("movie_id").cast(IntegerType), col("genres"))
       .filter(col("movie_id").isNotNull).collect()
       .flatMap(row => try { Some((row.getInt(0), row.getString(1))) } catch { case _: Exception => None })
-      .groupBy(_._1).map(_._2.head).toArray  // Deduplicate by movie_id
-
-    if (validMovies.isEmpty) return Seq.empty[(Int, Int, Double)].toDF("user_id", "movie_id", "rating")
-
-    val ratings = (1 to userCount).flatMap { userId =>
+      .groupBy(_._1).map(_._2.head).toArray
+    
+    if (movieList.isEmpty) return Seq.empty[(Int, Int, Double)].toDF("user_id", "movie_id", "rating")
+    
+    val movieCount = movieList.length
+    val ratings = scala.collection.mutable.Set[(Int, Int)]()
+    
+    (1 to userCount).foreach { userId =>
+      val numRatings = scala.util.Random.nextInt(11) + 10
+      var count = 0
+      while (count < numRatings && count < movieCount) {
+        val movieIdx = scala.util.Random.nextInt(movieCount)
+        val (movieId, _) = movieList(movieIdx)
+        if (!ratings.contains((userId, movieId))) {
+          ratings.add((userId, movieId))
+          count += 1
+        }
+      }
+    }
+    
+    val ratingSeq = ratings.map { case (userId, movieId) =>
       val userPref = userId % 5 match {
         case 0 => "Action,Adventure"; case 1 => "Animation,Family"; case 2 => "Drama,Romance"
         case 3 => "Comedy,Crime"; case 4 => "Science Fiction,Fantasy"
       }
-      val numRatings = scala.util.Random.nextInt(11) + 10
-      val shuffledMovies = scala.util.Random.shuffle(validMovies.toSeq).take(numRatings)
-      shuffledMovies.map { case (movieId, movieGenre) =>
-        val baseRating = scala.util.Random.nextDouble() * 4 + 1
-        val rating = if (movieGenre != null && userPref.split(",").exists(movieGenre.contains)) math.min(baseRating + 1, 5.0) else baseRating
-        (userId, movieId, BigDecimal(rating).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble)
-      }
-    }
-    println(s"✅ 生成 ${ratings.size} 条模拟评分")
-    ratings.toDF("user_id", "movie_id", "rating")
+      val movieGenre = movieList.find(_._1 == movieId).map(_._2).getOrElse("")
+      val baseRating = scala.util.Random.nextDouble() * 4 + 1
+      val rating = if (movieGenre != null && userPref.split(",").exists(movieGenre.contains)) math.min(baseRating + 1, 5.0) else baseRating
+      (userId, movieId, BigDecimal(rating).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble)
+    }.toSeq
+    
+    println(s"✅ 生成 ${ratingSeq.size} 条模拟评分")
+    ratingSeq.toDF("user_id", "movie_id", "rating")
   }
 
   def saveToHDFS(df: DataFrame, path: String): Unit = {
